@@ -114,8 +114,8 @@ struct TabBarItem: View {
             return isSelected ? "sparkles" : "sparkles"
         case .safeFolder:
             return isSelected ? "folder.fill" : "folder"
-        case .settings:
-            return isSelected ? "gearshape.fill" : "gearshape"
+        case .backup:
+            return isSelected ? "square.and.arrow.down" : "square.and.arrow.up"
         }
     }
 }

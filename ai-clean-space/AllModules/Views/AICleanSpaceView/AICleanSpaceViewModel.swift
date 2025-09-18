@@ -107,7 +107,7 @@ final class AICleanSpaceViewModel: ObservableObject {
         case dashboard = "Dashboard"
         case star = "Star"
         case safeFolder = "Safe Folder"
-        case settings = "Settings"
+        case backup = "Backup"
         
         var iconName: String {
             switch self {
@@ -115,7 +115,7 @@ final class AICleanSpaceViewModel: ObservableObject {
             case .dashboard: return "square.grid.2x2"
             case .star: return "sparkles"
             case .safeFolder: return "folder"
-            case .settings: return "gearshape"
+            case .backup: return "square.and.arrow.up"
             }
         }
     }

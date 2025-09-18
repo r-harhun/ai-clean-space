@@ -35,8 +35,8 @@ struct AICleanSpaceView: View {
                     SmartCleanView(isPaywallPresented: $isPaywallPresented)
                 case .safeFolder:
                     safeFolder
-                case .settings:
-                    SettingsView(isPaywallPresented: $isPaywallPresented)
+                case .backup:
+                    BackupView()
                 }
             }
             .onChange(of: viewModel.currentSelectedTab) { newValue in
