@@ -24,7 +24,7 @@ struct AICleanSpaceView: View {
                 case .dashboard:
                     SpeedTestView(isPaywallPresented: $isPaywallPresented)
                 case .star:
-                    SmartCleanView(isPaywallPresented: $isPaywallPresented)
+                    AIFeatureView(isPaywallPresented: $isPaywallPresented)
                 case .safeFolder:
                     safeFolder
                 case .backup:

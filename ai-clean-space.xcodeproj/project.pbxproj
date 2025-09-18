@@ -274,7 +274,6 @@
 				CODE_SIGN_ENTITLEMENTS = "ai-clean-space/ai-clean-space.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"ai-clean-space/Preview Content\"";
 				DEVELOPMENT_TEAM = UVV92HTRTD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -309,7 +308,6 @@
 				CODE_SIGN_ENTITLEMENTS = "ai-clean-space/ai-clean-space.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"ai-clean-space/Preview Content\"";
 				DEVELOPMENT_TEAM = UVV92HTRTD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

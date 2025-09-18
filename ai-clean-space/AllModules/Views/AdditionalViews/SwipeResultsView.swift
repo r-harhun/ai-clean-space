@@ -10,7 +10,7 @@ struct SwipeResultsData: Identifiable {
 }
 
 struct SwipeResultsView: View {
-    @ObservedObject var viewModel: SmartCleanViewModel
+    @ObservedObject var viewModel: AIFeatureViewModel
     @Environment(\.dismiss) private var dismiss
     
     // Computed property для получения актуальных данных
@@ -265,18 +265,5 @@ struct SwipeResultsView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 34) // Safe area bottom padding
         .background(Color(.systemBackground))
-    }
-}
-
-// MARK: - Preview
-
-struct SwipeResultsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SwipeResultsView(
-            viewModel: SmartCleanViewModel(),
-            onFinish: { photos in
-                print("Deleting \(photos.count) photos")
-            }
-        )
     }
 }

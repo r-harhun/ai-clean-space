@@ -2,17 +2,11 @@ import SwiftUI
 import Combine
 import UIKit
 
-struct SwipeViewData: Identifiable {
-    let id = UUID()
-    let sections: [MediaCleanerServiceSection]
-    let type: ScanItemType
-}
-
-struct SmartCleanView: View {
-    @StateObject private var viewModel = SmartCleanViewModel()
+struct AIFeatureView: View {
+    @StateObject private var viewModel = AIFeatureViewModel()
     @Binding var isPaywallPresented: Bool
     
-    @State private var presentedSwipeView: SwipeViewData?
+    @State private var presentedSwipeView: SwipedPhotoModel?
     @State private var presentedResultsView: SwipeResultsData?
     @State private var showSwipeOnboarding = false
     
@@ -50,14 +44,11 @@ struct SmartCleanView: View {
                     viewModel.processSwipeDecisions(decisions)
                 },
                 onShowResults: {
-                    // Закрываем текущий swipe view и показываем результаты
                     presentedSwipeView = nil
                     let resultsData = viewModel.getSwipeResultsData()
                     presentedResultsView = resultsData
                 },
                 onSwipeDecisionChanged: {
-                    print("UPDATE:COUNT:TEST - onSwipeDecisionChanged callback called in SmartCleanView from SwipePhotoDetailView")
-                    // Обновляем счетчики после каждого свайпа
                     viewModel.updateTotalSwipeDecisionsCount()
                 }
             )
@@ -69,15 +60,12 @@ struct SmartCleanView: View {
                     viewModel.finalizePhotoDeletion(photosToDelete)
                 },
                 onSwipeDecisionChanged: {
-                    print("UPDATE:COUNT:TEST - onSwipeDecisionChanged callback called in SmartCleanView from SwipeResultsView")
-                    // Обновляем счетчики также и из SwipeResultsView
                     viewModel.updateTotalSwipeDecisionsCount()
                 }
             )
         }
         .fullScreenCover(isPresented: $showSwipeOnboarding) {
             SwipeOnboardingView {
-                // Когда пользователь нажимает Start в onboarding
                 let allSections = [
                     viewModel.getSections(for: .image(.similar)),
                     viewModel.getSections(for: .image(.blurred)),
@@ -86,7 +74,7 @@ struct SmartCleanView: View {
                 ].flatMap { $0 }
                 
                 if !allSections.isEmpty {
-                    presentedSwipeView = SwipeViewData(sections: allSections, type: .similar)
+                    presentedSwipeView = SwipedPhotoModel(sections: allSections, type: .similar)
                 }
             }
         }
@@ -125,9 +113,7 @@ struct SmartCleanView: View {
         }
         .padding(.top, 12)
     }
-    
-    // MARK: - Swipe Mode Section
-    
+        
     @ViewBuilder
     private func swipeModeSection() -> some View {
         VStack(spacing: 20) {
@@ -160,9 +146,9 @@ struct SmartCleanView: View {
             
             Button(action: {
                 if !viewModel.hasActiveSubscription {
-                    isPaywallPresented = true // Показываем пейволл
+                    isPaywallPresented = true
                 } else {
-                    showSwipeOnboarding = true // Запускаем функционал только при наличии подписки
+                    showSwipeOnboarding = true
                 }
             }) {
                 HStack {
@@ -181,7 +167,6 @@ struct SmartCleanView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // View Results button - Enhanced Design
             if viewModel.hasSwipeResults {
                 Button(action: {
                     let impact = UIImpactFeedbackGenerator(style: .medium)
@@ -191,7 +176,6 @@ struct SmartCleanView: View {
                     presentedResultsView = resultsData
                 }) {
                     HStack(spacing: 16) {
-                        // Icon Container
                         ZStack {
                             Circle()
                                 .fill(LinearGradient(
@@ -212,7 +196,6 @@ struct SmartCleanView: View {
                                 )
                         }
                         
-                        // Text Content
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 6) {
                                 Text("View Swipe Results")
@@ -231,7 +214,6 @@ struct SmartCleanView: View {
                         
                         Spacer()
                         
-                        // Arrow with background
                         ZStack {
                             Circle()
                                 .fill(.white.opacity(0.2))
@@ -269,7 +251,6 @@ struct SmartCleanView: View {
                         y: 4
                     )
                     .overlay(
-                        // Subtle highlight
                         LinearGradient(
                             colors: [.white.opacity(0.3), .clear],
                             startPoint: .top,
@@ -287,9 +268,7 @@ struct SmartCleanView: View {
         .background(CMColor.backgroundSecondary)
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
-    
-    // MARK: - Categories Grid
-    
+        
     @ViewBuilder
     private func categoriesGrid() -> some View {
         let cardSize = UIScreen.main.bounds.width / 2 - 24
@@ -304,7 +283,7 @@ struct SmartCleanView: View {
                 } else {
                     let sections = viewModel.getSections(for: .image(.similar))
                     if !sections.isEmpty {
-                        presentedSwipeView = SwipeViewData(sections: sections, type: .similar)
+                        presentedSwipeView = SwipedPhotoModel(sections: sections, type: .similar)
                     }
                 }
             } label: {
@@ -324,7 +303,7 @@ struct SmartCleanView: View {
                 } else {
                     let sections = viewModel.getSections(for: .image(.blurred))
                     if !sections.isEmpty {
-                        presentedSwipeView = SwipeViewData(sections: sections, type: .blurred)
+                        presentedSwipeView = SwipedPhotoModel(sections: sections, type: .blurred)
                     }
                 }
             } label: {
@@ -344,7 +323,7 @@ struct SmartCleanView: View {
                 } else {
                     let sections = viewModel.getSections(for: .image(.duplicates))
                     if !sections.isEmpty {
-                        presentedSwipeView = SwipeViewData(sections: sections, type: .duplicates)
+                        presentedSwipeView = SwipedPhotoModel(sections: sections, type: .duplicates)
                     }
                 }
             } label: {
@@ -364,7 +343,7 @@ struct SmartCleanView: View {
                 } else {
                     let sections = viewModel.getSections(for: .image(.screenshots))
                     if !sections.isEmpty {
-                        presentedSwipeView = SwipeViewData(sections: sections, type: .screenshots)
+                        presentedSwipeView = SwipedPhotoModel(sections: sections, type: .screenshots)
                     }
                 }
             } label: {
@@ -432,9 +411,7 @@ struct SmartCleanView: View {
         )
         .clipped()
     }
-    
-    // MARK: - Helpers
-    
+        
     private func getItemCountText(for type: ScanItemType, count: Int, sizeStr: String) -> String {
         if count == 0 {
             return "No items"
@@ -451,317 +428,5 @@ struct SmartCleanView: View {
         } else {
             return String(format: "%.1f GB", megabytes / 1024)
         }
-    }
-}
-
-// MARK: - ViewModel
-
-@MainActor
-class SmartCleanViewModel: ObservableObject {
-    @Published var similarCount = 0
-    @Published var blurredCount = 0
-    @Published var duplicatesCount = 0
-    @Published var screenshotsCount = 0
-    
-    @Published var similarMegabytes = 0.0
-    @Published var blurredMegabytes = 0.0
-    @Published var duplicatesMegabytes = 0.0
-    @Published var screenshotsMegabytes = 0.0
-    
-    @Published var similarPreview: UIImage?
-    @Published var blurredPreview: UIImage?
-    @Published var duplicatesPreview: UIImage?
-    @Published var screenshotsPreview: UIImage?
-    
-    // Swipe results tracking
-    @Published var swipeDecisions: [String: PhotoSwipeDecision] = [:]
-    @Published var totalSwipeDecisionsForDeletion = 0 {
-        willSet {
-            print("UPDATE:COUNT:TEST - @Published totalSwipeDecisionsForDeletion will change from \(totalSwipeDecisionsForDeletion) to \(newValue)")
-        }
-        didSet {
-            print("UPDATE:COUNT:TEST - @Published totalSwipeDecisionsForDeletion did change from \(oldValue) to \(totalSwipeDecisionsForDeletion)")
-        }
-    }
-    
-    var hasSwipeResults: Bool {
-        let result = totalSwipeDecisionsForDeletion > 0
-        print("UPDATE:COUNT:TEST - hasSwipeResults computed: totalSwipeDecisionsForDeletion=\(totalSwipeDecisionsForDeletion), result=\(result)")
-        return result
-    }
-    
-    var swipeResultsSummary: String {
-        let totalSavedInCache = getTotalSavedInCache()
-        return "Saved: \(totalSavedInCache), Remove: \(totalSwipeDecisionsForDeletion)"
-    }
-    
-    private let purchaseService = ApphudPurchaseService()
-
-    var hasActiveSubscription: Bool {
-        purchaseService.hasActiveSubscription
-    }
-    
-    private let mediaCleanerService = MediaCleanerService.shared
-    private let cacheService: MediaCleanerCacheService = MediaCleanerCacheServiceImpl.shared
-    private var cancellables = Set<AnyCancellable>()
-    
-    init() {
-        setupBindings()
-        loadExistingSwipeDecisions()
-        updateTotalSwipeDecisionsCount()
-    }
-    
-    // MARK: - Public Methods
-    
-    func getSections(for type: MediaCleanerServiceType) -> [MediaCleanerServiceSection] {
-        return mediaCleanerService.getMedia(type)
-    }
-    
-    func processSwipeDecisions(_ decisions: [String: PhotoSwipeDecision]) {
-        // Сохраняем решения локально для отображения в UI
-        swipeDecisions = decisions
-        // Обновляем общий счетчик из кеша
-        updateTotalSwipeDecisionsCount()
-        print("SWIPE:RESULTS - Processed \(decisions.count) swipe decisions, total for deletion: \(totalSwipeDecisionsForDeletion)")
-    }
-    
-    func getSwipeResultsData() -> SwipeResultsData {
-        print("UPDATE:COUNT:TEST - getSwipeResultsData() called")
-        
-        // Получаем актуальные данные из кеша вместо локальных swipeDecisions
-        let allSections = [
-            getSections(for: .image(.similar)),
-            getSections(for: .image(.blurred)),
-            getSections(for: .image(.duplicates)),
-            getSections(for: .image(.screenshots))
-        ].flatMap { $0 }
-        
-        var savedPhotos: [String] = []
-        var removePhotos: [String] = []
-        
-        for section in allSections {
-            for model in section.models {
-                let assetId = model.asset.localIdentifier
-                if let cacheDecision = cacheService.getSwipeDecision(id: assetId) {
-                    if cacheDecision == true {
-                        // ignored = true означает keep
-                        savedPhotos.append(assetId)
-                    } else {
-                        // ignored = false означает delete
-                        removePhotos.append(assetId)
-                    }
-                }
-            }
-        }
-        
-        let data = SwipeResultsData(
-            savedCount: savedPhotos.count,
-            removeCount: removePhotos.count,
-            savedPhotos: savedPhotos,
-            removePhotos: removePhotos
-        )
-        
-        print("UPDATE:COUNT:TEST - getSwipeResultsData() returning: savedCount=\(data.savedCount), removeCount=\(data.removeCount)")
-        return data
-    }
-    
-    func finalizePhotoDeletion(_ photosToDelete: [String]) {
-        print("SWIPE:RESULTS - Finalizing deletion of \(photosToDelete.count) photos")
-        
-        mediaCleanerService.deleteAssets(localIdentifiers: photosToDelete) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let deletedIdentifiers):
-                    print("SWIPE:RESULTS - Successfully deleted \(deletedIdentifiers.count) assets.")
-                    
-                    // Очищаем swipe решения после успешного удаления
-                    self.clearSwipeDecisions(for: deletedIdentifiers)
-                    
-                    // Обновляем общий счетчик swipe decisions для удаления
-                    self.updateTotalSwipeDecisionsCount()
-                    
-                    // Обновляем счётчики и превью
-                    self.mediaCleanerService.updateCountsAndPreviews()
-                    
-                case .failure(let error):
-                    print("SWIPE:RESULTS - Failed to delete assets: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-    
-    private func loadExistingSwipeDecisions() {
-        // Загружаем сохранённые swipe решения из кеша при инициализации
-        let allSections = [
-            getSections(for: .image(.similar)),
-            getSections(for: .image(.blurred)),
-            getSections(for: .image(.duplicates)),
-            getSections(for: .image(.screenshots))
-        ].flatMap { $0 }
-        
-        var loadedDecisions: [String: PhotoSwipeDecision] = [:]
-        
-        for section in allSections {
-            for model in section.models {
-                let assetId = model.asset.localIdentifier
-                if let cacheDecision = cacheService.getSwipeDecision(id: assetId) {
-                    let photoDecision: PhotoSwipeDecision = cacheDecision ? .keep : .delete
-                    loadedDecisions[assetId] = photoDecision
-                }
-            }
-        }
-        
-        swipeDecisions = loadedDecisions
-        print("SWIPE:RESULTS - Loaded \(loadedDecisions.count) existing swipe decisions")
-    }
-    
-    private func clearSwipeDecisions(for deletedIdentifiers: [String]) {
-        for identifier in deletedIdentifiers {
-            swipeDecisions.removeValue(forKey: identifier)
-            cacheService.deleteSwipeDecision(id: identifier)
-        }
-        print("SWIPE:RESULTS - Cleared swipe decisions for \(deletedIdentifiers.count) deleted photos")
-    }
-    
-    func getSectionsForAssetIdentifiers(_ assetIdentifiers: [String]) -> [MediaCleanerServiceSection] {
-        let identifierSet = Set(assetIdentifiers)
-        
-        // Получаем все доступные секции
-        let allSections = [
-            getSections(for: .image(.similar)),
-            getSections(for: .image(.blurred)),
-            getSections(for: .image(.duplicates)),
-            getSections(for: .image(.screenshots))
-        ].flatMap { $0 }
-        
-        // Фильтруем модели, оставляя только нужные asset identifiers
-        let filteredSections = allSections.compactMap { section -> MediaCleanerServiceSection? in
-            let filteredModels = section.models.filter { model in
-                identifierSet.contains(model.asset.localIdentifier)
-            }
-            
-            // Возвращаем секцию только если в ней есть нужные модели
-            guard !filteredModels.isEmpty else { return nil }
-            
-            return MediaCleanerServiceSection(
-                kind: section.kind,
-                models: filteredModels
-            )
-        }
-        
-        print("SWIPE:RESULTS - Created \(filteredSections.count) filtered sections from \(assetIdentifiers.count) asset identifiers")
-        return filteredSections
-    }
-    
-    private func setupBindings() {
-        mediaCleanerService.countsPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] counts in
-                guard let self = self else { return }
-                
-                self.similarCount = counts.similar
-                self.blurredCount = counts.blurred
-                self.duplicatesCount = counts.duplicates
-                self.screenshotsCount = counts.screenshots
-            }
-            .store(in: &cancellables)
-        
-        mediaCleanerService.megabytesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] megabytes in
-                guard let self = self else { return }
-                
-                self.similarMegabytes = megabytes.similar
-                self.blurredMegabytes = megabytes.blurred
-                self.duplicatesMegabytes = megabytes.duplicates
-                self.screenshotsMegabytes = megabytes.screenshots
-            }
-            .store(in: &cancellables)
-        
-        mediaCleanerService.similarPreviewPublisher
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.similarPreview, on: self)
-            .store(in: &cancellables)
-        
-        mediaCleanerService.blurredPreviewPublisher
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.blurredPreview, on: self)
-            .store(in: &cancellables)
-        
-        mediaCleanerService.duplicatesPreviewPublisher
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.duplicatesPreview, on: self)
-            .store(in: &cancellables)
-        
-        mediaCleanerService.screenshotsPreviewPublisher
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.screenshotsPreview, on: self)
-            .store(in: &cancellables)
-    }
-    
-    // MARK: - Private Helper Methods
-    
-    func updateTotalSwipeDecisionsCount() {
-        print("UPDATE:COUNT:TEST - updateTotalSwipeDecisionsCount() called")
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { 
-                print("UPDATE:COUNT:TEST - self is nil in updateTotalSwipeDecisionsCount")
-                return 
-            }
-            print("UPDATE:COUNT:TEST - About to call getTotalSwipeDecisionsForDeletion()")
-            let newCount = self.cacheService.getTotalSwipeDecisionsForDeletion()
-            print("UPDATE:COUNT:TEST - getTotalSwipeDecisionsForDeletion() returned: \(newCount)")
-            print("UPDATE:COUNT:TEST - Current totalSwipeDecisionsForDeletion: \(self.totalSwipeDecisionsForDeletion)")
-            
-            if self.totalSwipeDecisionsForDeletion != newCount {
-                print("UPDATE:COUNT:TEST - Count changed from \(self.totalSwipeDecisionsForDeletion) to \(newCount)")
-                self.totalSwipeDecisionsForDeletion = newCount
-                print("SWIPE:TOTAL:UPDATE - Updated totalSwipeDecisionsForDeletion to \(newCount)")
-                print("UPDATE:COUNT:TEST - Updated @Published totalSwipeDecisionsForDeletion to \(newCount)")
-            } else {
-                print("UPDATE:COUNT:TEST - Count unchanged: \(newCount)")
-            }
-        }
-    }
-    
-    private func getTotalSavedInCache() -> Int {
-        // Получаем все swipe decisions из cache и считаем сохраненные (true)
-        let allSections = [
-            getSections(for: .image(.similar)),
-            getSections(for: .image(.blurred)),
-            getSections(for: .image(.duplicates)),
-            getSections(for: .image(.screenshots))
-        ].flatMap { $0 }
-        
-        var savedCount = 0
-        for section in allSections {
-            for model in section.models {
-                let assetId = model.asset.localIdentifier
-                if let cacheDecision = cacheService.getSwipeDecision(id: assetId), cacheDecision == true {
-                    savedCount += 1
-                }
-            }
-        }
-        
-        return savedCount
-    }
-}
-
-// MARK: - SwipeResultsButtonStyle
-
-struct SwipeResultsButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
-// MARK: - Preview
-
-struct SmartCleanView_Previews: PreviewProvider {
-    static var previews: some View {
-        SmartCleanView(isPaywallPresented: .constant(false))
     }
 }
