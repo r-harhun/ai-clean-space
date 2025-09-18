@@ -41,12 +41,7 @@ final class MainViewModel: ObservableObject {
         case loading
     }
 
-    private let mediaCleanerService: MediaCleanerService = {
-        print("SCAN:TEST -  accessing MediaCleanerServiceImpl.shared")
-        let service = MediaCleanerServiceImpl.shared
-        print("SCAN:TEST -  got MediaCleanerServiceImpl.shared")
-        return service
-    }()
+    private let mediaCleanerService = MediaCleanerService.shared
     private let contactsViewModel: ContactsViewModel
     private let calendarService: CalendarService
 

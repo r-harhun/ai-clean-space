@@ -1,3 +1,3 @@
 import Photos
 
-class ImageManager: PHCachingImageManager {}
+class CachingImageManager: PHCachingImageManager {}

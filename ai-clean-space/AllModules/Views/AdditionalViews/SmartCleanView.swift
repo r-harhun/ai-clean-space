@@ -505,7 +505,7 @@ class SmartCleanViewModel: ObservableObject {
         purchaseService.hasActiveSubscription
     }
     
-    private let mediaCleanerService: MediaCleanerService = MediaCleanerServiceImpl.shared
+    private let mediaCleanerService = MediaCleanerService.shared
     private let cacheService: MediaCleanerCacheService = MediaCleanerCacheServiceImpl.shared
     private var cancellables = Set<AnyCancellable>()
     

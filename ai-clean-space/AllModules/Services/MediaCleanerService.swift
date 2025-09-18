@@ -3,43 +3,16 @@ import Photos
 import UIKit
 import Combine
 
-protocol MediaCleanerService {
-    var previewsPublisher: AnyPublisher<MediaCleanerServicePreviews, Never> { get }
-    var countsPublisher: AnyPublisher<MediaCleanerServiceCounts<Int>, Never> { get }
-    var megabytesPublisher: AnyPublisher<MediaCleanerServiceCounts<Double>, Never> { get }
-    var progressPublisher: AnyPublisher<MediaCleanerServiceProgress, Never> { get }
-    var mediaWasDeletedPublisher: AnyPublisher<MediaCleanerServiceType, Never> { get }
-    
-    // Individual preview publishers
-    var similarPreviewPublisher: AnyPublisher<UIImage?, Never> { get }
-    var blurredPreviewPublisher: AnyPublisher<UIImage?, Never> { get }
-    var duplicatesPreviewPublisher: AnyPublisher<UIImage?, Never> { get }
-    var screenshotsPreviewPublisher: AnyPublisher<UIImage?, Never> { get }
-    var videosPreviewPublisher: AnyPublisher<UIImage?, Never> { get }
-
-    func checkAuthStatus() -> PHAuthorizationStatus
-    func requestAuthorization(completion: @escaping (PHAuthorizationStatus) -> Void)
-
-    func scanAllImages()
-    func scanVideos()
-    func resetData()
-    func getMedia(_ type: MediaCleanerServiceType) -> [MediaCleanerServiceSection]
-
-    func delete(assets: Set<PHAsset>, completion: @escaping (Bool) -> Void)
-    func deleteAssets(localIdentifiers: [String], completion: @escaping (Result<[String], Error>) -> Void)
-    func updateCountsAndPreviews()
-}
-
-final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, MediaCleanerService {
-    static let shared: MediaCleanerServiceImpl = {
-        print("SCAN:TEST - Creating MediaCleanerServiceImpl.shared instance")
-        let instance = MediaCleanerServiceImpl(
+final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
+    static let shared: MediaCleanerService = {
+        print("SCAN:TEST - Creating MediaCleanerService.shared instance")
+        let instance = MediaCleanerService(
             photoLibrary: PHPhotoLibrary.shared(),
             imageProcessor: ImageProcessorImpl(),
-            imageManager: ImageManager(),
+            imageManager: CachingImageManager(),
             cacheService: MediaCleanerCacheServiceImpl.shared
         )
-        print("SCAN:TEST - MediaCleanerServiceImpl.shared instance created")
+        print("SCAN:TEST - MediaCleanerService.shared instance created")
         return instance
     }()
 
@@ -49,7 +22,7 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
     private let videoQueue = DispatchQueue(label: "MediaCleanerServiceVideoQueue", qos: .userInteractive)
 
     private let photoLibrary: PHPhotoLibrary
-    private let cachingImageManager: ImageManager
+    private let cachingImageManager: CachingImageManager
 
     private var imagesFetchResult: PHFetchResult<PHAsset>?
     private var videoFetchRsult: PHFetchResult<PHAsset>?
@@ -86,47 +59,16 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
 
     private let _imageProgress = MediaCleanerServiceProgress.startImages
 
-    /// Поток превью для похожих изображений
     private let _similarPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    /// Поток превью для размытых изображений
     private let _blurredPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    /// Поток превью для дубликатов
     private let _duplicatesPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    /// Поток превью для скриншотов
     private let _screenshotsPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    /// Поток превью для видеофайлов
     private let _videosPreview = CurrentValueSubject<UIImage?, Never>(nil)
 
     private let imageProcessor: ImageProcessor
     private let cacheService: MediaCleanerCacheService
 
-    // MARK: - Life cycle
-
-    init(
-        photoLibrary: PHPhotoLibrary,
-        imageProcessor: ImageProcessor,
-        imageManager: ImageManager,
-        cacheService: MediaCleanerCacheService
-    ) {
-        print("SCAN:TEST - MediaCleanerServiceImpl init started")
-        self.photoLibrary = photoLibrary
-        self.imageProcessor = imageProcessor
-        self.cachingImageManager = imageManager
-        self.cacheService = cacheService
-        super.init()
-        photoLibrary.register(self)
-        print("SCAN:TEST - MediaCleanerServiceImpl init completed")
-        print("SCAN:TEST - Initial progress value: \(progressSubject.value.value)")
-        print("SCAN:TEST - Initial counts total: \(countsSubject.value.total)")
-    }
-
-    deinit {
-        photoLibrary.unregisterChangeObserver(self)
-    }
-
-    // MARK: - MediaCleanerService conformance
     
-    // Private subjects
     private let progressSubject = CurrentValueSubject<MediaCleanerServiceProgress, Never>(
         MediaCleanerServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false)
     )
@@ -143,7 +85,6 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
         MediaCleanerServiceType.image(.similar)
     )
     
-    // Public publishers
     var progressPublisher: AnyPublisher<MediaCleanerServiceProgress, Never> {
         print("SCAN:TEST - progressPublisher accessed, current value: \(progressSubject.value.value)")
         return progressSubject.eraseToAnyPublisher()
@@ -164,7 +105,6 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
         mediaWasDeletedSubject.eraseToAnyPublisher()
     }
     
-    // Individual preview publishers
     var similarPreviewPublisher: AnyPublisher<UIImage?, Never> {
         _similarPreview.eraseToAnyPublisher()
     }
@@ -181,12 +121,33 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
         _videosPreview.eraseToAnyPublisher()
     }
     
-    // Computed properties for backward compatibility
     var progress: MediaCleanerServiceProgress { progressSubject.value }
     var counts: MediaCleanerServiceCounts<Int> { countsSubject.value }
     var megabytes: MediaCleanerServiceCounts<Double> { megabytesSubject.value }
     var previews: MediaCleanerServicePreviews { previewsSubject.value }
     var mediaWasDeleted: MediaCleanerServiceType { mediaWasDeletedSubject.value }
+    
+    init(
+        photoLibrary: PHPhotoLibrary,
+        imageProcessor: ImageProcessor,
+        imageManager: CachingImageManager,
+        cacheService: MediaCleanerCacheService
+    ) {
+        print("SCAN:TEST - MediaCleanerService init started")
+        self.photoLibrary = photoLibrary
+        self.imageProcessor = imageProcessor
+        self.cachingImageManager = imageManager
+        self.cacheService = cacheService
+        super.init()
+        photoLibrary.register(self)
+        print("SCAN:TEST - MediaCleanerService init completed")
+        print("SCAN:TEST - Initial progress value: \(progressSubject.value.value)")
+        print("SCAN:TEST - Initial counts total: \(countsSubject.value.total)")
+    }
+
+    deinit {
+        photoLibrary.unregisterChangeObserver(self)
+    }
 
     func checkAuthStatus() -> PHAuthorizationStatus {
         PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -229,14 +190,10 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
         duplicatesRequestOptions.resizeMode = .fast
 
         let imageProcessor = self.imageProcessor
-//        let progress = self._imageProgress
         let imageManager = self.cachingImageManager
         let imageQueue = self.imageQueue
         let dupliQueue = self.dupliQueue
         let blurrQueue = self.blurrQueue
-
-//        let megabytes = self.megabytes
-
         let cacheService = self.cacheService
 
         var similarPreviewIndexThreshold = 0 // similarPreviewIndexThreshold
@@ -435,10 +392,8 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
                         }
                     }
                 } else {
-//                    if _blurrCheckIsAllowed.value {
                         getPreview(commonModel.asset) { image in
                             blurrQueue.async {
-//                                if _blurrCheckIsAllowed.value {
                                     if let image = image {
                                         if imageProcessor.isBlurry(image) {
                                             if insertedBlurred(commonModel) {
@@ -449,11 +404,9 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
                                         } else {
                                             cacheService.setBlurred(id: asset.localIdentifier, value: false)
                                         }
-//                                    }
                                 }
                             }
                         }
-//                    }
                 }
             }
         }
@@ -659,9 +612,9 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
             }
         }
     }
+}
 
-    // MARK: - Private
-    
+extension MediaCleanerService {
     private func addMegabytes(count: Double, to type: MediaCleanerServiceType) {
         let currentMegabytes = megabytesSubject.value
         currentMegabytes.add(count: count, to: type)
@@ -757,96 +710,5 @@ final class MediaCleanerServiceImpl: NSObject, PHPhotoLibraryChangeObserver, Med
             completion(size)
             cacheService.setSize(id: asset.localIdentifier, value: size)
         }
-    }
-}
-
-// MARK: - Extensions
-
-extension Set where Element == MediaCleanerServiceModel {
-
-    var dateSections: [MediaCleanerServiceSection] {
-        makeDateSections(sortedByIndex)
-    }
-
-    var equalitySections: [MediaCleanerServiceSection] {
-        makeEqualitySections(sortedByEquality)
-    }
-
-    var similaritySections: [MediaCleanerServiceSection] {
-        makeSimilaritySections(sortedBySimilarity)
-    }
-
-    private var sortedByIndex: [Element] {
-        sorted(by: { $0.index < $1.index })
-    }
-
-    private var sortedByEquality: [Element] {
-        sorted(by: { $0.equality > $1.equality })
-    }
-
-    private var sortedBySimilarity: [Element] {
-        sorted(by: { $0.similarity < $1.similarity })
-    }
-
-    private func makeDateSections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
-        var prevDate = sorted.first(where: { $0.asset.creationDate != nil })?.asset.creationDate ??  Date(timeIntervalSince1970: 0)
-        for (index, model) in sorted.enumerated() {
-            if let curDate = model.asset.creationDate {
-                if abs(prevDate.timeIntervalSince1970 - curDate.timeIntervalSince1970) > 86400 {
-                    if !models.isEmpty {
-                        out.append(.init(kind: .date(prevDate == Date(timeIntervalSince1970: 0) ? nil : prevDate), models: models))
-                    }
-                    models = []
-                    prevDate = curDate
-                }
-            }
-            models.append(model)
-            if index == sorted.count - 1 && !models.isEmpty {
-                out.append(.init(kind: .date(prevDate == Date(timeIntervalSince1970: 0) ? nil : prevDate), models: models))
-            }
-        }
-        return out
-    }
-
-    private func makeEqualitySections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
-        var prevProximity: Double = 0
-        for (index, model) in sorted.enumerated() {
-            if model.equality != prevProximity {
-                if models.count > 1 {
-                    out.append(.init(kind: .count, models: models))
-                }
-                models = []
-                prevProximity = model.equality
-            }
-            models.append(model)
-            if index == sorted.count - 1 && models.count > 1 {
-                out.append(.init(kind: .count, models: models))
-            }
-        }
-        return out
-    }
-
-    private func makeSimilaritySections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
-        var prevProximity = Int.min
-        for (index, model) in sorted.enumerated() {
-            if model.similarity > prevProximity {
-                if models.count > 1 {
-                    out.append(.init(kind: .count, models: models))
-                }
-                models = []
-                prevProximity = model.similarity
-            }
-            models.append(model)
-            if index == sorted.count - 1 && models.count > 1 {
-                out.append(.init(kind: .count, models: models))
-            }
-        }
-        return out
     }
 }

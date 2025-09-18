@@ -70,7 +70,7 @@ final class CalendarService: ObservableObject {
     
     private let eventStore = EKEventStore()
     private var cancellables = Set<AnyCancellable>()
-    private let whitelistService = WhitelistCalendarService()
+    private let whitelistCalendarService = WhitelistCalendarService()
     
     // MARK: - Initialization
     
@@ -114,7 +114,7 @@ final class CalendarService: ObservableObject {
         let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
         
-        let whitelistedIdentifiers = whitelistService.getWhitelistedEventIdentifiers()
+        let whitelistedIdentifiers = whitelistCalendarService.getWhitelistedEventIdentifiers()
         
         let systemEvents = ekEvents.map {
             let compositeId = "\($0.eventIdentifier ?? "")_\($0.startDate.timeIntervalSince1970)"
@@ -192,13 +192,13 @@ final class CalendarService: ObservableObject {
     
     /// Adds an event to the local whitelist.
     func addToWhiteList(_ event: SystemCalendarEvent) {
-        whitelistService.addToWhitelist(event)
+        whitelistCalendarService.addToWhitelist(event)
         updateEventsWhitelistStatus()
     }
     
     /// Removes an event from the local whitelist.
     func removeFromWhiteList(_ event: SystemCalendarEvent) {
-        whitelistService.removeFromWhitelist(event)
+        whitelistCalendarService.removeFromWhitelist(event)
         updateEventsWhitelistStatus()
     }
     
@@ -233,7 +233,7 @@ final class CalendarService: ObservableObject {
     }
     
     private func setupWhitelistObserver() {
-        whitelistService.$whitelistedEvents
+        whitelistCalendarService.$whitelistedEvents
             .sink { [weak self] _ in
                 Task { @MainActor in
                     self?.updateEventsWhitelistStatus()
@@ -243,7 +243,7 @@ final class CalendarService: ObservableObject {
     }
     
     private func updateEventsWhitelistStatus() {
-        let whitelistedIdentifiers = whitelistService.getWhitelistedEventIdentifiers()
+        let whitelistedIdentifiers = whitelistCalendarService.getWhitelistedEventIdentifiers()
         
         for index in events.indices {
             let compositeIdentifier = events[index].eventIdentifier

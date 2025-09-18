@@ -28,7 +28,7 @@ final class AICleanSpaceViewModel: ObservableObject {
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
     private var scanTimer: Timer?
-    private let mediaCleanerService: MediaCleanerService = MediaCleanerServiceImpl.shared
+    private let mediaCleanerService = MediaCleanerService.shared
     
     // MARK: - Initialization
     
