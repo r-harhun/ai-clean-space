@@ -27,7 +27,7 @@ struct AIFeatureView: View {
                         .padding(.bottom, 120)
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(CMColor.background)
             .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -84,43 +84,49 @@ struct AIFeatureView: View {
     
     @ViewBuilder
     private func headerView() -> some View {
-        HStack {
-            Text("AI Smart CleanUp")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
-            Spacer()
-            
-            // todo PRO
-            Button(action: {
-                isPaywallPresented = true
-            }) { 
-                HStack(spacing: 8) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(CMColor.primaryLight)
-                    
-                    Text("Pro")
-                        .fontWeight(.semibold)
-                        .foregroundColor(CMColor.primaryLight)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("AI-Powered Smart Scan")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(CMColor.primaryText)
+                
+                Spacer()
+                
+                // todo PRO
+                Button(action: {
+                    isPaywallPresented = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(CMColor.primaryLight)
+                        
+                        Text("Pro")
+                            .fontWeight(.semibold)
+                            .foregroundColor(CMColor.primaryLight)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(CMColor.backgroundSecondary)
+                    .clipShape(Capsule())
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(CMColor.backgroundSecondary)
-                .clipShape(Capsule())
             }
+            
+            Text("Our AI algorithm analyzes your gallery using the most advanced technologies to find junk.")
+                .font(.subheadline)
+                .foregroundColor(CMColor.secondaryText)
         }
         .padding(.top, 12)
     }
-        
+    
     @ViewBuilder
     private func swipeModeSection() -> some View {
         VStack(spacing: 20) {
             HStack(spacing: 16) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.systemGray6))
+                        .fill(CMColor.backgroundSecondary)
                         .frame(width: 80, height: 80)
                     
                     Image("smartScan")
@@ -130,14 +136,14 @@ struct AIFeatureView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Swipe Mode")
+                    Text("AI Smart Review")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                        .foregroundColor(CMColor.primaryText)
                     
-                    Text("Swipe the photo to decide their fate: right - keep, left - delete.")
+                    Text("AI Mode lets you quickly review and make decisions based on our intelligent scanning recommendations.")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CMColor.secondaryText)
                         .multilineTextAlignment(.leading)
                 }
                 
@@ -152,7 +158,7 @@ struct AIFeatureView: View {
                 }
             }) {
                 HStack {
-                    Text("Enable swipe mode")
+                    Text("Launch AI Review")
                         .fontWeight(.semibold)
                     
                     Spacer()
@@ -160,10 +166,10 @@ struct AIFeatureView: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                 }
-                .foregroundColor(.purple)
+                .foregroundColor(CMColor.primary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
-                .background(Color(.systemGray6))
+                .background(CMColor.backgroundSecondary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
@@ -179,7 +185,7 @@ struct AIFeatureView: View {
                         ZStack {
                             Circle()
                                 .fill(LinearGradient(
-                                    colors: [Color.orange.opacity(0.2), Color.pink.opacity(0.2)],
+                                    colors: [CMColor.primary.opacity(0.2), CMColor.accent.opacity(0.2)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ))
@@ -189,7 +195,7 @@ struct AIFeatureView: View {
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(
                                     LinearGradient(
-                                        colors: [Color.orange, Color.pink],
+                                        colors: [CMColor.primary, CMColor.accent],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
@@ -198,30 +204,30 @@ struct AIFeatureView: View {
                         
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 6) {
-                                Text("View Swipe Results")
+                                Text("Your AI Report is Ready")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(CMColor.white)
                                 
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.orange.opacity(0.8))
+                                    .foregroundColor(CMColor.accent.opacity(0.8))
                             }
                             
                             Text("\(viewModel.swipeResultsSummary)")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(CMColor.white.opacity(0.9))
                         }
                         
                         Spacer()
                         
                         ZStack {
                             Circle()
-                                .fill(.white.opacity(0.2))
+                                .fill(CMColor.white.opacity(0.2))
                                 .frame(width: 32, height: 32)
                             
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(CMColor.white)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -229,9 +235,9 @@ struct AIFeatureView: View {
                     .background(
                         LinearGradient(
                             colors: [
-                                Color.purple.opacity(0.9),
-                                Color.blue.opacity(0.8),
-                                Color.pink.opacity(0.7)
+                                CMColor.primaryDark.opacity(0.9),
+                                CMColor.secondary.opacity(0.8),
+                                CMColor.accent.opacity(0.7)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -239,20 +245,20 @@ struct AIFeatureView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(
-                        color: Color.purple.opacity(0.4),
+                        color: CMColor.primaryDark.opacity(0.4),
                         radius: 12,
                         x: 0,
                         y: 6
                     )
                     .shadow(
-                        color: Color.pink.opacity(0.3),
+                        color: CMColor.accent.opacity(0.3),
                         radius: 8,
                         x: 0,
                         y: 4
                     )
                     .overlay(
                         LinearGradient(
-                            colors: [.white.opacity(0.3), .clear],
+                            colors: [CMColor.white.opacity(0.3), CMColor.clear],
                             startPoint: .top,
                             endPoint: .center
                         )
@@ -261,22 +267,19 @@ struct AIFeatureView: View {
                     .scaleEffect(1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.hasSwipeResults)
                 }
-                .buttonStyle(SwipeResultsButtonStyle())
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(20)
         .background(CMColor.backgroundSecondary)
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
-        
+    
     @ViewBuilder
     private func categoriesGrid() -> some View {
-        let cardSize = UIScreen.main.bounds.width / 2 - 24
+        let cardSize = UIScreen.main.bounds.width - 40
         
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2),
-            spacing: 16
-        ) {
+        VStack(spacing: 16) {
             Button {
                 if !viewModel.hasActiveSubscription {
                     isPaywallPresented = true
@@ -289,6 +292,7 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .similar,
+                    title: "AI-Identified Duplicates",
                     image: viewModel.similarPreview,
                     count: viewModel.similarCount,
                     sizeStr: formatMegabytes(viewModel.similarMegabytes),
@@ -309,6 +313,7 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .blurred,
+                    title: "AI-Sorted Blurred Images",
                     image: viewModel.blurredPreview,
                     count: viewModel.blurredCount,
                     sizeStr: formatMegabytes(viewModel.blurredMegabytes),
@@ -329,6 +334,7 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .duplicates,
+                    title: "AI-Detected Duplicate Files",
                     image: viewModel.duplicatesPreview,
                     count: viewModel.duplicatesCount,
                     sizeStr: formatMegabytes(viewModel.duplicatesMegabytes),
@@ -349,6 +355,7 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .screenshots,
+                    title: "Neural-Network Screenshots",
                     image: viewModel.screenshotsPreview,
                     count: viewModel.screenshotsCount,
                     sizeStr: formatMegabytes(viewModel.screenshotsMegabytes),
@@ -358,9 +365,10 @@ struct AIFeatureView: View {
             .buttonStyle(.plain)
         }
     }
-        
+    
     private func getItem(
         for type: ScanItemType,
+        title: String,
         image: UIImage?,
         count: Int,
         sizeStr: String,
@@ -369,21 +377,27 @@ struct AIFeatureView: View {
         ZStack {
             if let image {
                 Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
                     .frame(width: size, height: size)
-                    .scaledToFit()
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 24))
+            } else {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(CMColor.backgroundSecondary)
+                    .frame(width: size, height: size)
             }
             
             VStack {
                 HStack {
-                    Text(type.title)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(CMColor.primaryText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(CMColor.border)
-                        .cornerRadius(12)
+                    Text(title)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(CMColor.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(CMColor.surface.opacity(0.8))
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                     
                     Spacer()
                 }
@@ -391,32 +405,39 @@ struct AIFeatureView: View {
                 Spacer()
                 
                 HStack {
-                    Text(getItemCountText(for: type, count: count, sizeStr: sizeStr))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(CMColor.primaryText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(CMColor.background)
-                        .cornerRadius(12)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(getItemCountText(count: count))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(CMColor.secondaryText)
+                        
+                        Text(formatMegabytes(viewModel.similarMegabytes))
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(CMColor.secondaryText)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(CMColor.surface.opacity(0.8))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     
                     Spacer()
                 }
             }
-            .padding(12)
+            .padding(20)
         }
         .frame(width: size, height: size)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .foregroundStyle(CMColor.backgroundSecondary)
+                .fill(CMColor.backgroundSecondary)
         )
         .clipped()
+        .shadow(color: CMColor.primaryDark.opacity(0.3), radius: 10, x: 0, y: 5)
     }
-        
-    private func getItemCountText(for type: ScanItemType, count: Int, sizeStr: String) -> String {
+    
+    private func getItemCountText(count: Int) -> String {
         if count == 0 {
             return "No items"
         } else {
-            return "\(count) items • \(sizeStr)"
+            return "\(count) items found"
         }
     }
     
