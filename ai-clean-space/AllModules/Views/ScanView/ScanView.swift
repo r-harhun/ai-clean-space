@@ -42,7 +42,7 @@ struct ScanView: View {
             VStack(spacing: 24 * scalingFactor) {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack {
-                        Text("SnapCleaner")
+                        Text("AI-Clean-Space")
                             .font(.system(size: 22, weight: .bold))
                             .foregroundStyle(CMColor.primaryText)
 
@@ -63,9 +63,6 @@ struct ScanView: View {
                         }
                     }
                 }
-
-                // Smart Scanning плашка
-                smartScanningCard()
 
                 HStack(spacing: 24 * scalingFactor) {
                     Button {
@@ -449,89 +446,5 @@ struct ScanView: View {
                 return "\(count) items • \(sizeStr)"
             }
         }
-    }
-    
-    // MARK: - Smart Scanning Card
-    
-    @ViewBuilder
-    private func smartScanningCard() -> some View {
-        HStack(spacing: 16) {
-            // Иконка слева
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.blue.opacity(0.1))
-                    .frame(width: 60, height: 60)
-                
-                VStack(spacing: -2) {
-                    Image(systemName: "photo.stack")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.blue)
-                    
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.orange)
-                        .offset(x: 8, y: -4)
-                }
-            }
-            
-            // Контент справа
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Smart scanning")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.primary)
-                        
-                        Text("The application scans the gallery\nand groups photos by categories")
-                            .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.leading)
-                    }
-                    
-                    Spacer()
-                }
-                
-                // Кнопка Start smart scanning
-                Button(action: {
-                    // Действие при нажатии на кнопку
-                    print("Start smart scanning pressed")
-                    // Можно добавить логику принудительного пересканирования
-                    viewModel.onAppear()
-                }) {
-                    HStack(spacing: 8) {
-                        Text("Start smart scanning")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.purple, Color.blue],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(25)
-                }
-                .padding(.top, 8)
-            }
-        }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(CMColor.backgroundSecondary)
-                .shadow(
-                    color: Color.black.opacity(0.05),
-                    radius: 8,
-                    x: 0,
-                    y: 2
-                )
-        )
-        .padding(.horizontal, 8)
     }
 }

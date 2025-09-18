@@ -118,7 +118,7 @@ private struct ColorPaletteDemo: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("SnapCleaner Color Palette")
+                Text("AI-Clean-Space Color Palette")
                     .font(.title.bold())
                     .foregroundColor(CMColor.primaryText)
                 
