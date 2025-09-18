@@ -70,7 +70,7 @@ final class CalendarService: ObservableObject {
     
     private let eventStore = EKEventStore()
     private var cancellables = Set<AnyCancellable>()
-    private let whitelistService = WhitelistService()
+    private let whitelistService = WhitelistCalendarService()
     
     // MARK: - Initialization
     

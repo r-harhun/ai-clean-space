@@ -568,8 +568,6 @@ struct CalendarView: View {
             
             await MainActor.run {
                 selectedEventIds.removeAll()
-                
-                // Не нужно перезагружать события - WhitelistService автоматически обновит статус через Combine
             }
         }
     }
@@ -589,8 +587,6 @@ struct CalendarView: View {
             
             await MainActor.run {
                 selectedEventIds.removeAll()
-                
-                // Не нужно перезагружать события - WhitelistService автоматически обновит статус через Combine
             }
         }
     }
@@ -598,44 +594,28 @@ struct CalendarView: View {
     private func deleteSelectedEvents() {
         Task {
             let selectedEvents = getSelectedEvents()
-            print("🗑️ [CalendarView] Начинаем удаление \(selectedEvents.count) событий")
             var systemEventsToDelete: [SystemCalendarEvent] = []
             var notFoundEvents: [CalendarEvent] = []
             
             for event in selectedEvents {
-                print("🗑️ [CalendarView] Ищем системное событие для: '\(event.title)' (\(event.originalEventIdentifier))")
-                // Находим соответствующее системное событие по оригинальному eventIdentifier и дате
-                if let systemEvent = calendarService.events.first(where: { 
+                if let systemEvent = calendarService.events.first(where: {
                     $0.eventIdentifier == event.originalEventIdentifier && 
                     Calendar.current.isDate($0.startDate, inSameDayAs: event.date)
                 }) {
-                    print("✅ [CalendarView] Найдено системное событие: '\(systemEvent.title)'")
                     systemEventsToDelete.append(systemEvent)
                 } else {
-                    print("❌ [CalendarView] Не найдено системное событие для: '\(event.title)'")
                     notFoundEvents.append(event)
                 }
             }
-            
-            print("🗑️ [CalendarView] Будет удалено \(systemEventsToDelete.count) из \(selectedEvents.count) событий")
-            print("🗑️ [CalendarView] Не найдено в системном календаре: \(notFoundEvents.count) событий")
-            
+
             let result = await calendarService.deleteEvents(systemEventsToDelete)
-            print("🗑️ [CalendarView] Результат удаления: удалено \(result.deletedCount), ошибок \(result.failedEvents.count)")
             
             await MainActor.run {
                 selectedEventIds.removeAll()
                 
-                if result.deletedCount > 0 {
-                    print("✅ [CalendarView] Успешно удалено \(result.deletedCount) событий")
-                }
-                
-                // Создаем общий список событий с ошибками
                 var allFailedEvents: [(SystemCalendarEvent, EventDeletionError)] = result.failedEvents
                 
-                // Добавляем события, которые не найдены в системном календаре
                 for notFoundEvent in notFoundEvents {
-                    // Создаем временный SystemCalendarEvent для отображения ошибки
                     let tempSystemEvent = SystemCalendarEvent(
                         eventIdentifier: notFoundEvent.originalEventIdentifier,
                         title: notFoundEvent.title,
@@ -649,21 +629,15 @@ struct CalendarView: View {
                     allFailedEvents.append((tempSystemEvent, .eventNotFound))
                 }
                 
-                // Показываем попап если есть любые ошибки
                 if !allFailedEvents.isEmpty {
-                    print("⚠️ [CalendarView] Есть события с ошибками: \(allFailedEvents.count)")
                     cannotDeleteEvents = allFailedEvents
                     
-                    // Берем первое событие для отображения сообщения
                     if let firstCannotDelete = allFailedEvents.first {
                         cannotDeleteMessage = firstCannotDelete.1.localizedDescription
-                        print("⚠️ [CalendarView] Сообщение об ошибке: \(cannotDeleteMessage)")
                     }
                     
                     showingCannotDeleteAlert = true
-                    print("⚠️ [CalendarView] Показываем попап об ошибке удаления")
                 } else {
-                    print("✅ [CalendarView] Все события удалены успешно, попап не нужен")
                 }
             }
         }
