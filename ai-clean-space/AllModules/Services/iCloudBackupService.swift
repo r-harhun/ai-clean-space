@@ -63,10 +63,8 @@ final class iCloudBackupService: ObservableObject {
             // Save to iCloud
             _ = try await privateDatabase.save(record)
             
-            // Update settings
-            BackupSettingsManager.shared.recordSuccessfulBackup()
+            BackupService.shared.recordSuccessfulBackup()
             
-            // Update local history
             let backupItem = iCloudBackupItem(
                 id: record.recordID.recordName,
                 date: Date(),

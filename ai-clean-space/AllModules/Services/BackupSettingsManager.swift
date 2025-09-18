@@ -41,10 +41,10 @@ private extension Date {
     }()
 }
 
-// MARK: - BackupSettingsManager
+// MARK: - BackupService
 
 /// Manages all backup-related user preferences and settings.
-final class BackupSettingsManager: ObservableObject {
+final class BackupService: ObservableObject {
     
     // MARK: - Properties
     
@@ -82,7 +82,7 @@ final class BackupSettingsManager: ObservableObject {
     
     // MARK: - Singleton & Initialization
     
-    static let shared = BackupSettingsManager()
+    static let shared = BackupService()
     
     private init() {
         self.isAutoBackupEnabled = userDefaults.bool(forKey: BackupSettingsKey.isAutoBackupEnabled.rawValue)
@@ -115,7 +115,7 @@ final class BackupSettingsManager: ObservableObject {
     // MARK: - Private Helpers
     
     private func logInitialization() {
-        logger.info("🏗️ BackupSettingsManager initialized")
+        logger.info("🏗️ BackupService initialized")
         logger.info("  📱 Auto backup enabled: \(self.isAutoBackupEnabled)")
         logger.info("  📅 Last backup: \(self.lastBackupDate?.formatted() ?? "None")")
         logger.info("  📊 Total backups: \(self.totalBackupsCount)")

@@ -458,8 +458,7 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
         
         logger.info("🔄 Starting merge of \(contactsToMerge.count) contacts")
         
-        // Perform automatic backup if enabled
-        if BackupSettingsManager.shared.isAutoBackupEnabled {
+        if BackupService.shared.isAutoBackupEnabled {
             logger.info("🔄 Auto backup is enabled, creating backup before merge")
             await performAutoBackup()
         }
@@ -468,12 +467,10 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
         let saveRequest = CNSaveRequest()
         
         do {
-            // Get the primary contact (most complete one) to update
             let primaryContact = contactsToMerge.max { contact1, contact2 in
                 calculateContactCompleteness(contact1) < calculateContactCompleteness(contact2)
             }!
             
-            // Fetch the primary contact as mutable with all required keys
             let allKeysToFetch = [
                 CNContactGivenNameKey,
                 CNContactFamilyNameKey,
@@ -492,13 +489,10 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
                 keysToFetch: allKeysToFetch
             ).mutableCopy() as! CNMutableContact
             
-            // Merge data from other contacts into the primary contact
             mergeDataIntoContact(mutablePrimaryContact, from: contactsToMerge)
             
-            // Update the primary contact
             saveRequest.update(mutablePrimaryContact)
             
-            // Delete the other contacts
             for contact in contactsToMerge {
                 if contact.identifier != primaryContact.identifier {
                     let contactToDelete = try store.unifiedContact(
@@ -510,7 +504,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
                 }
             }
             
-            // Execute the save request
             try store.execute(saveRequest)
             
             await MainActor.run {
@@ -529,11 +522,9 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
     }
     
     private func mergeDataIntoContact(_ targetContact: CNMutableContact, from contacts: [CNContact]) {
-        // Collect all unique phone numbers
         var allPhones: [CNLabeledValue<CNPhoneNumber>] = []
         var seenPhones = Set<String>()
         
-        // Start with existing phones from target contact
         for phoneValue in targetContact.phoneNumbers {
             let normalizedPhone = normalizePhoneNumber(phoneValue.value.stringValue)
             if !normalizedPhone.isEmpty {
@@ -542,7 +533,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
             }
         }
         
-        // Add phones from other contacts
         for contact in contacts {
             if contact.identifier != targetContact.identifier {
                 for phoneValue in contact.phoneNumbers {
@@ -556,11 +546,9 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
         }
         targetContact.phoneNumbers = allPhones
         
-        // Collect all unique email addresses
         var allEmails: [CNLabeledValue<NSString>] = []
         var seenEmails = Set<String>()
         
-        // Start with existing emails from target contact
         for emailValue in targetContact.emailAddresses {
             let normalizedEmail = String(emailValue.value).lowercased()
             if !normalizedEmail.isEmpty {
@@ -569,7 +557,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
             }
         }
         
-        // Add emails from other contacts
         for contact in contacts {
             if contact.identifier != targetContact.identifier {
                 for emailValue in contact.emailAddresses {
@@ -583,7 +570,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
         }
         targetContact.emailAddresses = allEmails
         
-        // Organization info - prefer non-empty values
         for contact in contacts {
             if contact.identifier != targetContact.identifier {
                 if targetContact.organizationName.isEmpty && !contact.organizationName.isEmpty {
@@ -595,7 +581,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
             }
         }
         
-        // Postal addresses - collect all addresses
         var allAddresses: [CNLabeledValue<CNPostalAddress>] = []
         allAddresses.append(contentsOf: targetContact.postalAddresses)
         
@@ -606,7 +591,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
         }
         targetContact.postalAddresses = allAddresses
         
-        // Use existing image or find best available image
         if targetContact.imageData == nil {
             for contact in contacts {
                 if contact.identifier != targetContact.identifier && contact.imageData != nil {
@@ -653,7 +637,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
                 saveRequest.delete(contactToDelete)
             }
             
-            // Execute the save request
             try store.execute(saveRequest)
             
             await MainActor.run {
@@ -673,7 +656,6 @@ class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
     
     // MARK: - Auto Backup
     
-    /// Performs automatic backup to iCloud when enabled
     private func performAutoBackup() async {
         logger.info("🔄 Performing automatic backup to iCloud")
         
