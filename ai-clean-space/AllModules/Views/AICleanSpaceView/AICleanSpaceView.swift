@@ -1,5 +1,5 @@
 //
-//  MediaCleanerView.swift
+//  AICleanSpaceView.swift
 //  cleanme2
 //
 //  Created by AI Assistant on 10.08.25.
@@ -8,8 +8,8 @@
 import SwiftUI
 
 // Main View
-struct MediaCleanerView: View {
-    @StateObject private var viewModel = MediaCleanerViewModel()
+struct AICleanSpaceView: View {
+    @StateObject private var viewModel = AICleanSpaceViewModel()
     @State private var isTabBarVisible: Bool = true // State variable for tab bar visibility
     @State private var isPasswordSet: Bool = false // Track if password is set
     @State private var isSafeFolderUnlocked: Bool = false // Track if safe folder is currently unlocked
@@ -26,7 +26,7 @@ struct MediaCleanerView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                switch viewModel.selectedTab {
+                switch viewModel.currentSelectedTab {
                 case .clean:
                     ScanView(isPaywallPresented: $isPaywallPresented)
                 case .dashboard:
@@ -39,7 +39,7 @@ struct MediaCleanerView: View {
                     SettingsView(isPaywallPresented: $isPaywallPresented)
                 }
             }
-            .onChange(of: viewModel.selectedTab) { newValue in
+            .onChange(of: viewModel.currentSelectedTab) { newValue in
                 // Reset safe folder authentication when switching away from safe tab
                 if newValue != .safeFolder {
                     isSafeFolderUnlocked = false
@@ -54,7 +54,7 @@ struct MediaCleanerView: View {
                 VStack {
                     Spacer()
 
-                    CustomTabBar(selectedTab: $viewModel.selectedTab)
+                    CustomTabBar(selectedTab: $viewModel.currentSelectedTab)
                         .padding(.bottom, 16 * scalingFactor)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -86,7 +86,7 @@ struct MediaCleanerView: View {
                         isSafeFolderUnlocked = true
                     },
                     onBackButtonTapped: {
-                        viewModel.selectedTab = .clean
+                        viewModel.currentSelectedTab = .clean
                     },
                     shouldAutoDismiss: false
                 )

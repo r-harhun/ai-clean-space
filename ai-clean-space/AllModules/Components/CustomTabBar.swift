@@ -17,7 +17,7 @@ import SwiftUI
 /// - Accessible contrast ratios maintained across themes
 
 struct CustomTabBar: View {
-    @Binding var selectedTab: MediaCleanerViewModel.TabType
+    @Binding var selectedTab: AICleanSpaceViewModel.TabType
     
     private var scalingFactor: CGFloat {
         UIScreen.main.bounds.height / 844
@@ -25,7 +25,7 @@ struct CustomTabBar: View {
     
     var body: some View {
         HStack(spacing: 24 * scalingFactor) {
-            ForEach(MediaCleanerViewModel.TabType.allCases, id: \.self) { tab in
+            ForEach(AICleanSpaceViewModel.TabType.allCases, id: \.self) { tab in
                 TabBarItem(
                     tab: tab,
                     isSelected: selectedTab == tab,
@@ -50,7 +50,7 @@ struct CustomTabBar: View {
 }
 
 struct TabBarItem: View {
-    let tab: MediaCleanerViewModel.TabType
+    let tab: AICleanSpaceViewModel.TabType
     let isSelected: Bool
     let onTap: () -> Void
     
@@ -104,7 +104,7 @@ struct TabBarItem: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    private func systemImageName(for tab: MediaCleanerViewModel.TabType) -> String {
+    private func systemImageName(for tab: AICleanSpaceViewModel.TabType) -> String {
         switch tab {
         case .clean:
             return isSelected ? "paintbrush.fill" : "paintbrush"

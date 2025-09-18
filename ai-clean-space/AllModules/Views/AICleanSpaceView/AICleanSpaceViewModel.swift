@@ -1,5 +1,5 @@
 //
-//  MediaCleanerViewModel.swift
+//  AICleanSpaceViewModel.swift
 //  cleanme2
 //
 //  Created by AI Assistant on 10.08.25.
@@ -11,13 +11,12 @@ import Combine
 import Photos
 
 @MainActor
-final class MediaCleanerViewModel: ObservableObject {
+final class AICleanSpaceViewModel: ObservableObject {
     
     // MARK: - Published Properties
-    @Published var scanningState: ScanningState = .idle
-    @Published var scanProgress: Double = 0.0
-    @Published var selectedTab: TabType = .clean
-    @Published var isPro = false
+    @Published var mainScanState: ScanningState = .idle
+    @Published var scanningProgressValue: Double = 0.0
+    @Published var currentSelectedTab: TabType = .clean
     
     // MARK: - Media Cleaner Properties
     @Published var progress: MediaCleanerServiceProgress = MediaCleanerServiceProgress(type: .image(.similar), index: 0, value: 0, isFinished: false)
@@ -130,7 +129,7 @@ final class MediaCleanerViewModel: ObservableObject {
     }
     
     var totalFilesText: String {
-        switch scanningState {
+        switch mainScanState {
         case .idle:
             return "7 159 files • 110.18 Gb will be cleaned"
         case .scanning:
@@ -158,10 +157,10 @@ final class MediaCleanerViewModel: ObservableObject {
     }
     
     func startScanning() {
-        guard case .idle = scanningState else { return }
+        guard case .idle = mainScanState else { return }
         
-        scanningState = .scanning(progress: 0.0)
-        scanProgress = 0.0
+        mainScanState = .scanning(progress: 0.0)
+        scanningProgressValue = 0.0
         
         // Start actual media scanning
         Task.detached {
@@ -173,8 +172,8 @@ final class MediaCleanerViewModel: ObservableObject {
         mediaCleanerService.progressPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] progress in
-                self?.scanProgress = progress.value
-                self?.scanningState = progress.isFinished ? .completed : .scanning(progress: progress.value)
+                self?.scanningProgressValue = progress.value
+                self?.mainScanState = progress.isFinished ? .completed : .scanning(progress: progress.value)
             }
             .store(in: &cancellables)
     }
@@ -190,7 +189,7 @@ final class MediaCleanerViewModel: ObservableObject {
     func resetToIdle() {
         scanTimer?.invalidate()
         scanTimer = nil
-        scanningState = .idle
-        scanProgress = 0.0
+        mainScanState = .idle
+        scanningProgressValue = 0.0
     }
 }

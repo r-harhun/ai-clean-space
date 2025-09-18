@@ -12,13 +12,9 @@ struct ContentView: View {
       
       var body: some View {
           if onboardingShown {
-              MediaCleanerView()
+              AICleanSpaceView()
           } else {
               OnboardingView()
           }
       }
-}
-
-#Preview {
-    ContentView()
 }
