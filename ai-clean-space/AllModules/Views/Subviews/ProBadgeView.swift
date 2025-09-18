@@ -1,7 +1,3 @@
-//
-//  ProBadgeView.swift
-//  cleanme2
-//
 
 import SwiftUI
 

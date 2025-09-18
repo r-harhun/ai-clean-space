@@ -1,11 +1,6 @@
-//
-//  CustomProgressViewStyle.swift
-//  cleanme2
-//
 
 import SwiftUI
 
-// MARK: - Пользовательский стиль для ProgressView
 struct CustomProgressViewStyle: ProgressViewStyle {
     private var scalingFactor: CGFloat {
         UIScreen.main.bounds.height / 844

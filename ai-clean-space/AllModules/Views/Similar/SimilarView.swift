@@ -1,7 +1,3 @@
-//
-//  SimilarView.swift
-//  cleanme2
-//
 
 import SwiftUI
 import Photos

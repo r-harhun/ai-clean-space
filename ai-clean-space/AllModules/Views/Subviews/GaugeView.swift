@@ -1,6 +1,3 @@
-//
-//  GaugeView.swift
-//  cleanme2
 
 import SwiftUI
 import Combine

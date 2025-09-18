@@ -1,7 +1,3 @@
-//
-//  CalendarView.swift
-//  cleanme2
-//
 
 import SwiftUI
 import EventKit

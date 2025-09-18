@@ -1,6 +1,3 @@
-//
-//  SystemDatePickerView.swift
-//  cleanme2
 
 import SwiftUI
 

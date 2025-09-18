@@ -1,8 +1,3 @@
-//
-//  EventRowView.swift
-//  cleanme2
-//
-//
 
 import SwiftUI
 
