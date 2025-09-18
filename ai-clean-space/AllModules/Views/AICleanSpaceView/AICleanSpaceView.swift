@@ -55,7 +55,7 @@ struct AICleanSpaceView: View {
     private var safeFolder: some View {
         Group {
             if !isSafeFolderUnlocked {
-                PasswordCodeView(
+                PINView(
                     onTabBarVisibilityChange: { isVisible in
                         withAnimation(.easeInOut(duration: 0.3)) {
                             isTabBarVisible = isVisible

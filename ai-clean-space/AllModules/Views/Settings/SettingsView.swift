@@ -112,7 +112,7 @@ struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16 * scalingFactor))
         }
         .fullScreenCover(isPresented: $showChangePasscodeView) {
-            PasswordCodeView(
+            PINView(
                 onTabBarVisibilityChange: { _ in },
                 onCodeEntered: { code in
                     print("New passcode saved: \(code)")

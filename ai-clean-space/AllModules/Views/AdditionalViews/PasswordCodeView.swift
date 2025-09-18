@@ -2,7 +2,7 @@ import SwiftUI
 import LocalAuthentication
 import UIKit
 
-struct PasswordCodeView: View {
+struct PINView: View {
     @State private var enteredCode: String = ""
     @State private var pinSetupState: PinSetupState = .entry
     @State private var storedPin: String = ""
@@ -13,7 +13,6 @@ struct PasswordCodeView: View {
     @Environment(\.dismiss) private var dismiss
     
     // MARK: - New State for Change Passcode Flow
-    // Добавляем новое состояние для отслеживания шагов в процессе смены пароля
     @State private var changePasscodeState: ChangePasscodeFlowState = .verifyingOldPin
     
     let requiredLength: Int = 4
@@ -23,7 +22,6 @@ struct PasswordCodeView: View {
     let shouldAutoDismiss: Bool
     
     // MARK: - New Property
-    // Новый параметр, чтобы указать, что мы в процессе смены пароля
     let isChangingPasscode: Bool
     
     private var scalingFactor: CGFloat {
@@ -37,7 +35,6 @@ struct PasswordCodeView: View {
     }
     
     // MARK: - New Enum
-    // Новый перечислитель для управления потоком смены пароля
     enum ChangePasscodeFlowState {
         case verifyingOldPin
         case settingNewPin
@@ -49,7 +46,7 @@ struct PasswordCodeView: View {
         onCodeEntered: @escaping (String) -> Void = { _ in },
         onBackButtonTapped: @escaping () -> Void = { },
         shouldAutoDismiss: Bool = true,
-        isChangingPasscode: Bool = false // Устанавливаем значение по умолчанию
+        isChangingPasscode: Bool = false
     ) {
         self.onTabBarVisibilityChange = onTabBarVisibilityChange
         self.onCodeEntered = onCodeEntered
@@ -64,19 +61,137 @@ struct PasswordCodeView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                header
+                // MARK: - Redesigned Header with Back Button
+                HStack {
+                    Button(action: {
+                        // Логика кнопки "Назад"
+                        onBackButtonTapped()
+                    }) {
+                        HStack(spacing: 6 * scalingFactor) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(CMColor.primary)
+                            
+                            Text("Back")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundColor(CMColor.primary)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Spacer()
+                    
+                    Text(titleText)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(CMColor.primaryText)
+                    
+                    Spacer()
+                    
+                    // Invisible button for alignment
+                    Button(action: {}) {
+                        HStack(spacing: 6 * scalingFactor) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                            Text("Back")
+                                .font(.system(size: 17, weight: .regular))
+                        }
+                    }
+                    .opacity(0)
+                }
+                .padding(.horizontal, 16 * scalingFactor)
+                .padding(.top, 50 * scalingFactor)
+                
+                // MARK: - Description Text
+                Text(descriptionText)
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundColor(CMColor.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30 * scalingFactor)
+                    .padding(.top, 10 * scalingFactor)
                 
                 Spacer()
                 
-                pinCodeSection
+                // MARK: - Redesigned PIN Code Section
+                VStack(spacing: 32 * scalingFactor) {
+                    HStack(spacing: 20 * scalingFactor) {
+                        ForEach(0..<requiredLength, id: \.self) { index in
+                            Circle()
+                                .stroke(lineWidth: 2)
+                                .fill(dotColor(for: index).opacity(0.5))
+                                .frame(width: 16 * scalingFactor, height: 16 * scalingFactor)
+                                .overlay(
+                                    Circle()
+                                        .fill(dotColor(for: index))
+                                        .frame(width: 16 * scalingFactor, height: 16 * scalingFactor)
+                                        .scaleEffect(index < enteredCode.count ? 1.0 : 0.0)
+                                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: enteredCode.count)
+                                )
+                                .animation(.easeInOut(duration: 0.2), value: showError)
+                        }
+                    }
+                    
+                    if showError {
+                        Text(errorMessage)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(CMColor.error)
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 16 * scalingFactor)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .frame(maxHeight: 200)
                 
                 Spacer()
                 
-                keypadSection
-                
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(height: 34 * scalingFactor)
+                // MARK: - Redesigned Keypad Section
+                VStack(spacing: 24 * scalingFactor) {
+                    ForEach(0..<3) { row in
+                        HStack(spacing: 36 * scalingFactor) {
+                            ForEach(1...3, id: \.self) { column in
+                                let number = row * 3 + column
+                                KeyboardButton(
+                                    text: "\(number)",
+                                    action: { addDigit("\(number)") }
+                                )
+                            }
+                        }
+                    }
+                    
+                    HStack(spacing: 36 * scalingFactor) {
+                        if shouldShowBiometricButton {
+                            Button(action: {
+                                authenticateWithBiometrics()
+                            }) {
+                                Image(systemName: biometricIconName)
+                                    .font(.system(size: 24 * scalingFactor, weight: .regular))
+                                    .foregroundColor(CMColor.primaryText)
+                                    .frame(width: 72 * scalingFactor, height: 72 * scalingFactor)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            Rectangle()
+                                .fill(Color.clear)
+                                .frame(width: 72 * scalingFactor, height: 72 * scalingFactor)
+                        }
+                        
+                        KeyboardButton(
+                            text: "0",
+                            action: { addDigit("0") }
+                        )
+                        
+                        Button(action: deleteDigit) {
+                            Image(systemName: "delete.backward.fill")
+                                .font(.system(size: 24 * scalingFactor, weight: .regular))
+                                .foregroundColor(CMColor.primaryText)
+                                .frame(width: 72 * scalingFactor, height: 72 * scalingFactor)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .opacity(enteredCode.isEmpty ? 0.3 : 1.0)
+                        .disabled(enteredCode.isEmpty)
+                    }
+                }
+                .padding(.bottom, 64 * scalingFactor)
+                .padding(.horizontal, 20)
             }
         }
         .onAppear {
@@ -88,155 +203,26 @@ struct PasswordCodeView: View {
         }
     }
     
-    // MARK: - Header
-    private var header: some View {
-        HStack {
-            Button(action: {
-                onBackButtonTapped()
-            }) {
-                HStack(spacing: 6 * scalingFactor) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(CMColor.primary)
-                    
-                    Text("Back")
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(CMColor.primary)
-                }
-                .padding(.vertical, 8 * scalingFactor)
-                .padding(.horizontal, 4 * scalingFactor)
-            }
-            .buttonStyle(PlainButtonStyle())
-            .contentShape(Rectangle())
-            
-            Spacer()
-            
-            Text(titleText)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(CMColor.primaryText)
-            
-            Spacer()
-            
-            Button(action: {}) {
-                HStack(spacing: 6 * scalingFactor) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 17, weight: .semibold))
-                    Text("Back")
-                        .font(.system(size: 17, weight: .regular))
-                }
-            }
-            .opacity(0)
-        }
-        .padding(.horizontal, 16 * scalingFactor)
-        .padding(.top, 8 * scalingFactor)
-    }
-    
-    // MARK: - PIN Code Section
-    private var pinCodeSection: some View {
-        VStack(spacing: 32 * scalingFactor) {
-            VStack(spacing: 16 * scalingFactor) {
-                Text("PIN code")
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundColor(CMColor.primaryText)
-                
-                Text(descriptionText)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(CMColor.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32 * scalingFactor)
-            }
-            
-            HStack(spacing: 20 * scalingFactor) {
-                ForEach(0..<requiredLength, id: \.self) { index in
-                    Circle()
-                        .fill(dotColor(for: index))
-                        .frame(width: 12 * scalingFactor, height: 12 * scalingFactor)
-                        .scaleEffect(index < enteredCode.count ? 1.2 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: enteredCode.count)
-                        .animation(.easeInOut(duration: 0.2), value: showError)
-                }
-            }
-            
-            if showError {
-                Text(errorMessage)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 16 * scalingFactor)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-    }
-    
-    // MARK: - Keypad Section
-    private var keypadSection: some View {
-        VStack(spacing: 16 * scalingFactor) {
-            HStack(spacing: 60 * scalingFactor) {
-                ForEach(1...3, id: \.self) { number in
-                    KeypadButton(
-                        text: "\(number)",
-                        action: { addDigit("\(number)") }
-                    )
-                }
-            }
-            
-            HStack(spacing: 60 * scalingFactor) {
-                ForEach(4...6, id: \.self) { number in
-                    KeypadButton(
-                        text: "\(number)",
-                        action: { addDigit("\(number)") }
-                    )
-                }
-            }
-            
-            HStack(spacing: 60 * scalingFactor) {
-                ForEach(7...9, id: \.self) { number in
-                    KeypadButton(
-                        text: "\(number)",
-                        action: { addDigit("\(number)") }
-                    )
-                }
-            }
-            
-            HStack(spacing: 60 * scalingFactor) {
-                Button(action: {
-                    authenticateWithBiometrics()
-                }) {
-                    Image(systemName: biometricIconName)
-                        .font(.system(size: 24 * scalingFactor, weight: .regular))
-                        .foregroundColor(CMColor.primaryText)
-                        .frame(width: 60 * scalingFactor, height: 60 * scalingFactor)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .opacity(shouldShowBiometricButton ? 1.0 : 0.0)
-                
-                KeypadButton(
-                    text: "0",
-                    action: { addDigit("0") }
-                )
-                
-                Button(action: deleteDigit) {
-                    Image(systemName: "delete.left")
-                        .font(.system(size: 24 * scalingFactor, weight: .regular))
-                        .foregroundColor(CMColor.primaryText)
-                        .frame(width: 60 * scalingFactor, height: 60 * scalingFactor)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .opacity(enteredCode.isEmpty ? 0.3 : 1.0)
-                .disabled(enteredCode.isEmpty)
-            }
-        }
-        .padding(.bottom, 64 * scalingFactor)
-    }
-    
     // MARK: - Helper Properties
     private var titleText: String {
         if isChangingPasscode {
-            return "Change Password"
-        } else if pinSetupState == .setup || pinSetupState == .confirm {
-            return "Create Password"
+            switch changePasscodeState {
+            case .verifyingOldPin:
+                return "Change Password"
+            case .settingNewPin:
+                return "Enter New PIN"
+            case .confirmingNewPin:
+                return "Confirm New PIN"
+            }
         } else {
-            return "Safe storage"
+            switch pinSetupState {
+            case .setup:
+                return "Create Password"
+            case .entry:
+                return "Safe Storage"
+            case .confirm:
+                return "Confirm PIN"
+            }
         }
     }
     
@@ -244,9 +230,9 @@ struct PasswordCodeView: View {
         if isChangingPasscode {
             switch changePasscodeState {
             case .verifyingOldPin:
-                return "Enter your current PIN"
+                return "Enter your current PIN to continue"
             case .settingNewPin:
-                return "Enter your new PIN"
+                return "Create a new 4-digit PIN"
             case .confirmingNewPin:
                 return "Confirm your new PIN"
             }
@@ -255,20 +241,16 @@ struct PasswordCodeView: View {
             case .setup:
                 return "Create a 4-digit PIN to secure your safe storage"
             case .entry:
-                return ""
+                return "Enter your PIN to unlock"
             case .confirm:
-                return "Confirm your PIN"
+                return "Confirm your 4-digit PIN"
             }
         }
     }
     
     private var shouldShowBiometricButton: Bool {
-        // Показываем кнопку биометрии только если:
-        // 1. Биометрия доступна на устройстве
-        // 2. PIN уже установлен (не в режиме настройки или подтверждения)
-        // 3. Не в процессе смены пароля (в этом случае нужно только ввести PIN)
-        return isBiometricAvailable && 
-               pinSetupState == .entry && 
+        return isBiometricAvailable &&
+               pinSetupState == .entry &&
                !isChangingPasscode
     }
     
@@ -281,16 +263,16 @@ struct PasswordCodeView: View {
         case .opticID:
             return "opticid"
         default:
-            return "faceid" // Fallback к FaceID иконке
+            return "faceid"
         }
     }
     
     // MARK: - Helper Methods
     private func dotColor(for index: Int) -> Color {
         if showError {
-            return .red
+            return CMColor.error
         } else if index < enteredCode.count {
-            return CMColor.primaryText
+            return CMColor.activeButton
         } else {
             return CMColor.secondaryText.opacity(0.3)
         }
@@ -392,13 +374,11 @@ struct PasswordCodeView: View {
         case .verifyingOldPin:
             let savedPin = UserDefaults.standard.string(forKey: "safe_storage_pin") ?? ""
             if enteredCode == savedPin {
-                // Verified old PIN, move to setting new one
                 enteredCode = ""
                 withAnimation {
                     changePasscodeState = .settingNewPin
                 }
             } else {
-                // Incorrect old PIN
                 showErrorState(message: "Incorrect PIN. Please try again.")
                 enteredCode = ""
                 let errorFeedback = UINotificationFeedbackGenerator()
@@ -406,7 +386,6 @@ struct PasswordCodeView: View {
             }
             
         case .settingNewPin:
-            // Store the new PIN and move to confirmation
             storedPin = enteredCode
             enteredCode = ""
             withAnimation {
@@ -414,18 +393,14 @@ struct PasswordCodeView: View {
             }
             
         case .confirmingNewPin:
-            // Confirm the new PIN
             if enteredCode == storedPin {
-                // New PINs match, save it
                 UserDefaults.standard.set(enteredCode, forKey: "safe_storage_pin")
-                onCodeEntered(enteredCode) // Callback to inform parent
+                onCodeEntered(enteredCode)
                 
-                // Dismiss the view on success
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     dismiss()
                 }
             } else {
-                // New PINs don't match, show error and restart setting new PIN
                 showErrorState(message: "PINs don't match. Please try again.")
                 enteredCode = ""
                 storedPin = ""
@@ -469,12 +444,11 @@ struct PasswordCodeView: View {
         guard isBiometricAvailable else { return }
         
         let context = LAContext()
-        let reason = "Используйте биометрию для входа в безопасное хранилище"
+        let reason = "Use biometrics to access your secure storage."
         
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in
             DispatchQueue.main.async {
                 if success {
-                    // Успешная биометрическая аутентификация
                     let savedPin = UserDefaults.standard.string(forKey: "safe_storage_pin") ?? ""
                     self.onCodeEntered(savedPin)
                     
@@ -484,7 +458,6 @@ struct PasswordCodeView: View {
                         }
                     }
                 } else if let error = error {
-                    // Обработка ошибок биометрической аутентификации
                     self.handleBiometricError(error as NSError)
                 }
             }
@@ -496,19 +469,17 @@ struct PasswordCodeView: View {
         
         switch error.code {
         case LAError.biometryNotAvailable.rawValue:
-            message = "Биометрическая аутентификация недоступна"
+            message = "Biometric authentication is not available."
         case LAError.biometryNotEnrolled.rawValue:
-            message = "Биометрические данные не настроены"
+            message = "Biometric data is not configured."
         case LAError.biometryLockout.rawValue:
-            message = "Биометрия заблокирована. Попробуйте позже"
+            message = "Biometrics is locked. Try again later."
         case LAError.userCancel.rawValue:
-            // Пользователь отменил аутентификацию - не показываем ошибку
             return
         case LAError.userFallback.rawValue:
-            // Пользователь выбрал ввод PIN - не показываем ошибку
             return
         default:
-            message = "Ошибка биометрической аутентификации"
+            message = "Biometric authentication error."
         }
         
         showErrorState(message: message)
@@ -518,45 +489,9 @@ struct PasswordCodeView: View {
         guard !enteredCode.isEmpty else { return }
         
         clearError()
-        
         enteredCode.removeLast()
         
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
-    }
-}
-
-// MARK: - Keypad Button
-struct KeypadButton: View {
-    let text: String
-    let action: () -> Void
-    
-    private var scalingFactor: CGFloat {
-        UIScreen.main.bounds.height / 844
-    }
-    
-    var body: some View {
-        Button(action: action) {
-            Text(text)
-                .font(.system(size: 28 * scalingFactor, weight: .regular))
-                .foregroundColor(CMColor.primaryText)
-                .frame(width: 60 * scalingFactor, height: 60 * scalingFactor)
-                .contentShape(Circle())
-        }
-        .buttonStyle(KeypadButtonStyle())
-    }
-}
-
-// MARK: - Keypad Button Style
-struct KeypadButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(
-                Circle()
-                    .fill(configuration.isPressed ? CMColor.secondaryText.opacity(0.1) : Color.clear)
-                    .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-            )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
