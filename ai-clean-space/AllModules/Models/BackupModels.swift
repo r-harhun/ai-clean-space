@@ -1,10 +1,3 @@
-//
-//  BackupModels.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import Foundation
 
 // MARK: - Backup Item Model

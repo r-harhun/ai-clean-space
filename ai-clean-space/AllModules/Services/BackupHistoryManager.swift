@@ -1,8 +1,8 @@
 import Foundation
 
 /// Менеджер для сохранения и загрузки истории бэкапов в UserDefaults.
-class BackupHistoryManager {
-    static let shared = BackupHistoryManager()
+class BackupToCloudService {
+    static let shared = BackupToCloudService()
     private let userDefaults = UserDefaults.standard
     private let backupsKey = "iCloudBackupHistory_v1"
 

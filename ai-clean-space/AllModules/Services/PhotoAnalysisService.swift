@@ -1,10 +1,3 @@
-//
-//  PhotoAnalysisService.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 10.08.25.
-//
-
 import Foundation
 import Photos
 import UIKit

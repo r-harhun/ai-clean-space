@@ -1,10 +1,3 @@
-//
-//  PasswordCodeView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 12.08.25.
-//
-
 import SwiftUI
 import LocalAuthentication
 import UIKit

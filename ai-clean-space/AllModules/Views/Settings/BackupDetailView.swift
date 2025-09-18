@@ -1,10 +1,3 @@
-//
-//  BackupDetailView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -66,7 +59,7 @@ struct BackupDetailView: View {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
                 // TODO: Реализовать удаление из iCloud
-                BackupHistoryManager.shared.deleteBackup(withId: backup.id.uuidString)
+                BackupToCloudService.shared.deleteBackup(withId: backup.id.uuidString)
                 dismiss()
             }
         } message: {

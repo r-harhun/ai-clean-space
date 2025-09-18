@@ -1,10 +1,3 @@
-//
-//  SafeStorageView.swift
-//  cleanme2
-//
-//  Created by Kirill Maximchik on 13.08.25.
-//
-
 import SwiftUI
 
 struct SafeStorageView: View {

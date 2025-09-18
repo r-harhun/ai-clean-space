@@ -1,10 +1,3 @@
-//
-//  PhotosView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 13.08.25.
-//
-
 import SwiftUI
 import PhotosUI
 

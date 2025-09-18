@@ -1,10 +1,3 @@
-//
-//  ContactModels.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import Foundation
 import CoreData
 
@@ -55,22 +48,14 @@ struct ContactData: Identifiable, Hashable, Codable {
     }
     
     var formattedPhoneNumber: String {
-        // Basic phone number formatting
-        let cleanNumber = phoneNumber.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        let number = phoneNumber.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
         
-        if cleanNumber.count == 11 && cleanNumber.hasPrefix("7") {
-            // Russian format: +7 (999) 456-78-90
-            let formatted = "+7 (\(cleanNumber.dropFirst().prefix(3))) \(cleanNumber.dropFirst(4).prefix(3))-\(cleanNumber.dropFirst(7).prefix(2))-\(cleanNumber.dropFirst(9))"
-            return formatted
-        } else if cleanNumber.count == 10 {
-            // US format: (999) 456-7890
-            let formatted = "(\(cleanNumber.prefix(3))) \(cleanNumber.dropFirst(3).prefix(3))-\(cleanNumber.dropFirst(6))"
+        if number.count == 10 {
+            // US
+            let formatted = "(\(number.prefix(3))) \(number.dropFirst(3).prefix(3))-\(number.dropFirst(6))"
             return formatted
         }
         
         return phoneNumber // Return original if can't format
     }
 }
-
-// MARK: - Core Data Extensions
-// Note: SafeContactEntity extensions are now defined in SafeContactEntity+Extensions.swift

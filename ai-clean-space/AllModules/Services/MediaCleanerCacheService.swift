@@ -1,10 +1,3 @@
-//
-//  MediaCleanerCacheService.swift
-//  TectoniumCleaner
-//
-//  Created by Maksim Polous on 17/05/2023.
-//
-
 import Combine
 import CoreData
 import Foundation

@@ -1,10 +1,3 @@
-//
-//  VideosView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on [Date]
-//
-
 import SwiftUI
 import AVKit
 import AVFoundation

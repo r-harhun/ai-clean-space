@@ -1,10 +1,3 @@
-//
-//  PhotoDetailView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 15.01.25.
-//
-
 import SwiftUI
 
 struct PhotoDetailView: View {

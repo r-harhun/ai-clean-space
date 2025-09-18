@@ -1,10 +1,3 @@
-//
-//  CalendarInstructionsView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 18.08.25.
-//
-
 import SwiftUI
 
 struct CalendarInstructionsView: View {
@@ -70,9 +63,6 @@ struct CalendarInstructionsView: View {
                 .fill(CMColor.surface)
                 .overlay {
                     VStack(spacing: 0) {
-                        // Calendar events mockup
-                        calendarEventsView()
-                        
                         // Bottom tab bar mockup
                         HStack {
                             calendarTabItem("Today", isSelected: true)
@@ -88,88 +78,6 @@ struct CalendarInstructionsView: View {
                 }
                 .frame(height: 500)
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-        }
-    }
-    
-    private func calendarEventsView() -> some View {
-        VStack(spacing: 0) {
-            // Time slots with events
-            VStack(spacing: 8) {
-                // 9 AM
-                timeSlotView(time: "9 AM", events: [
-                    CalendarEventModel(title: "***Special gift just 🎁 you***", color: .pink, isSpam: true)
-                ])
-                
-                timeSlotView(time: "9:41 AM", events: [
-                    CalendarEventModel(title: "Marketing team meeting", color: .yellow, isSpam: false)
-                ])
-                
-                // 10 AM
-                timeSlotView(time: "10 AM", events: [
-                    CalendarEventModel(title: "***Special gift just 🎁 you***", color: .pink, isSpam: true)
-                ])
-                
-                // 11 AM
-                timeSlotView(time: "11 AM", events: [
-                    CalendarEventModel(title: "Team scavenger hunt (virtual)", color: .yellow, isSpam: false),
-                    CalendarEventModel(title: "Hurry Up & Get Money Back 😃", color: .pink, isSpam: true)
-                ])
-                
-                // Noon
-                timeSlotView(time: "Noon", events: [
-                    CalendarEventModel(title: "Lunch with Erny", color: .blue, isSpam: false),
-                    CalendarEventModel(title: "Hurry Up & Get Money Back 😃", color: .pink, isSpam: true)
-                ])
-                
-                // 1 PM
-                timeSlotView(time: "1 PM", events: [
-                    CalendarEventModel(title: "🛍️ Discounted deals now 🛍️", color: .pink, isSpam: true)
-                ])
-                
-                // 2 PM
-                timeSlotView(time: "2 PM", events: [
-                    CalendarEventModel(title: "***Special gift just 🎁 you***", color: .pink, isSpam: true)
-                ])
-                
-                // 3 PM
-                timeSlotView(time: "3 PM", events: [
-                    CalendarEventModel(title: "Video brainstorming session", color: .yellow, isSpam: false),
-                    CalendarEventModel(title: "Hurry Up & Get Money Back 😃", color: .pink, isSpam: true)
-                ])
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 20)
-        }
-    }
-    
-    private func timeSlotView(time: String, events: [CalendarEventModel]) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Time label
-            Text(time)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(CMColor.secondaryText)
-                .frame(width: 50, alignment: .trailing)
-            
-            // Events
-            VStack(spacing: 4) {
-                ForEach(events.indices, id: \.self) { index in
-                    let event = events[index]
-                    HStack {
-                        Rectangle()
-                            .fill(event.color)
-                            .frame(width: 3)
-                        
-                        Text(event.title)
-                            .font(.system(size: 13, weight: event.isSpam ? .medium : .regular))
-                            .foregroundColor(event.isSpam ? .primary : CMColor.primaryText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 8)
-                            .background(event.isSpam ? Color.pink.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
-                    }
-                }
-            }
         }
     }
     

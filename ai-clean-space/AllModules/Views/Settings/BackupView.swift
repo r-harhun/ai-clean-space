@@ -1,10 +1,3 @@
-//
-//  BackupView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import SwiftUI
 import CloudKit
 
@@ -96,7 +89,7 @@ struct BackupView: View {
         }
         .onChange(of: showBackupDetail) { newValue in
             if !newValue {
-                realBackups = BackupHistoryManager.shared.loadBackups()
+                realBackups = BackupToCloudService.shared.loadBackups()
                 
                 Task {
                     await iCloudService.fetchBackupHistory()
@@ -376,7 +369,7 @@ struct BackupView: View {
         .animation(.easeInOut(duration: 0.2), value: iCloudService.isBackingUp)
         .background(CMColor.background)
         .onAppear {
-            realBackups = BackupHistoryManager.shared.loadBackups()
+            realBackups = BackupToCloudService.shared.loadBackups()
             
             Task {
                 await iCloudService.fetchBackupHistory()
@@ -421,7 +414,7 @@ struct BackupView: View {
                 if success {
                     let newBackupItem = BackupItem(date: Date(), contactsCount: contacts.count, size: backupSizeString)
                     realBackups.insert(newBackupItem, at: 0)
-                    BackupHistoryManager.shared.saveBackups(realBackups)
+                    BackupToCloudService.shared.saveBackups(realBackups)
                     backupMessage = "Successfully backed up \(contacts.count) contacts to iCloud! ☁️"
                 } else {
                     let errorMessage = iCloudService.lastError?.localizedDescription ?? "Unknown error"

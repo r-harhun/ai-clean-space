@@ -1,10 +1,3 @@
-//
-//  ContactsPersistenceManager.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import Foundation
 import os.log
 

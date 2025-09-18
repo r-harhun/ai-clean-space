@@ -1,10 +1,3 @@
-//
-//  MediaCategoryCard.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 10.08.25.
-//
-
 import SwiftUI
 
 struct MediaCategoryCard: View {

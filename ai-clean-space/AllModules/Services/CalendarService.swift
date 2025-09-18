@@ -1,10 +1,3 @@
-//
-//  CalendarService.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 18.08.25.
-//
-
 import Foundation
 import EventKit
 import Combine

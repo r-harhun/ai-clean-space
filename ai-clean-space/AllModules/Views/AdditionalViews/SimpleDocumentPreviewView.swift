@@ -1,10 +1,3 @@
-//
-//  SimpleDocumentPreviewView.swift
-//  cleanme2
-//
-//  Created by AI Assistant on 25.01.25.
-//
-
 import SwiftUI
 
 struct SimpleDocumentPreviewView: View {
