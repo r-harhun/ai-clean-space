@@ -1,12 +1,12 @@
 import SwiftUI
 
-// Main View
 struct AICleanSpaceView: View {
     @StateObject private var viewModel = AICleanSpaceViewModel()
-    @State private var isTabBarVisible: Bool = true // State variable for tab bar visibility
-    @State private var isPasswordSet: Bool = false // Track if password is set
-    @State private var isSafeFolderUnlocked: Bool = false // Track if safe folder is currently unlocked
-    @State private var isPaywallPresented: Bool = false // New state variable for presenting the paywall
+    @StateObject private var safeStorageManager = SafeStorageManager()
+    @State private var isTabBarVisible: Bool = true
+    @State private var isPasswordSet: Bool = false
+    @State private var isSafeFolderUnlocked: Bool = false
+    @State private var isPaywallPresented: Bool = false
 
     private var scalingFactor: CGFloat {
         UIScreen.main.bounds.height / 844
@@ -33,7 +33,6 @@ struct AICleanSpaceView: View {
                 }
             }
             .onChange(of: viewModel.currentSelectedTab) { newValue in
-                // Reset safe folder authentication when switching away from safe tab
                 if newValue != .safeFolder {
                     isSafeFolderUnlocked = false
                 }
@@ -42,7 +41,6 @@ struct AICleanSpaceView: View {
                 PaywallView(isPresented: $isPaywallPresented)
             }
 
-            // Плавающая панель вкладок
             if isTabBarVisible {
                 VStack {
                     Spacer()
@@ -54,11 +52,7 @@ struct AICleanSpaceView: View {
             }
         }
         .onAppear {
-//            if case .idle = viewModel.scanningState, viewModel.mediaCategories.isEmpty {
-//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                    viewModel.startScanning()
-//                }
-//            }
+            //
         }
     }
     
@@ -73,9 +67,7 @@ struct AICleanSpaceView: View {
                         }
                     },
                     onCodeEntered: { code in
-                        // Handle successful PIN entry
                         print("PIN entered: \(code)")
-                        // Unlock the safe folder for this session
                         isSafeFolderUnlocked = true
                     },
                     onBackButtonTapped: {
@@ -84,13 +76,13 @@ struct AICleanSpaceView: View {
                     shouldAutoDismiss: false
                 )
             } else {
-                // Safe folder content when authenticated
                 SafeStorageView(isPaywallPresented: $isPaywallPresented)
             }
         }
         .onAppear {
             checkPasswordStatus()
         }
+        .environmentObject(safeStorageManager)
     }
     
     // MARK: - Helper Methods
