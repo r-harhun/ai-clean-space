@@ -3,7 +3,7 @@ import Combine
 import Contacts
 
 @MainActor
-final class ScanViewModel: ObservableObject {
+final class MainViewModel: ObservableObject {
     @Published var subtitle = ""
     @Published var progress = Double.zero
 
@@ -42,9 +42,9 @@ final class ScanViewModel: ObservableObject {
     }
 
     private let mediaCleanerService: MediaCleanerService = {
-        print("SCAN:TEST - ScanViewModel accessing MediaCleanerServiceImpl.shared")
+        print("SCAN:TEST -  accessing MediaCleanerServiceImpl.shared")
         let service = MediaCleanerServiceImpl.shared
-        print("SCAN:TEST - ScanViewModel got MediaCleanerServiceImpl.shared")
+        print("SCAN:TEST -  got MediaCleanerServiceImpl.shared")
         return service
     }()
     private let contactsViewModel: ContactsViewModel
@@ -59,14 +59,14 @@ final class ScanViewModel: ObservableObject {
     }
     
     init() {
-        print("SCAN:TEST - ScanViewModel init started")
+        print("SCAN:TEST -  init started")
         self.contactsViewModel = ContactsViewModel()
         self.calendarService = CalendarService()
         print("SCAN:TEST - About to setupBindings")
         setupBindings()
         print("SCAN:TEST - About to checkInitialPermissions")
         checkInitialPermissions()
-        print("SCAN:TEST - ScanViewModel init completed, progress: \(progress)")
+        print("SCAN:TEST -  init completed, progress: \(progress)")
     }
     
     private func checkInitialPermissions() {

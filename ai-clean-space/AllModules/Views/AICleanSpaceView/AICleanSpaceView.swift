@@ -21,7 +21,7 @@ struct AICleanSpaceView: View {
             VStack(spacing: 0) {
                 switch viewModel.currentSelectedTab {
                 case .clean:
-                    ScanView(isPaywallPresented: $isPaywallPresented)
+                    MainView(isPaywallPresented: $isPaywallPresented)
                 case .dashboard:
                     SpeedTestView(isPaywallPresented: $isPaywallPresented)
                 case .star:

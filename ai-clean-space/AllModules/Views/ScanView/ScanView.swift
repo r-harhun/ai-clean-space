@@ -8,7 +8,7 @@ enum CategoryViewType: Identifiable, Hashable {
     case blurryPhotos
     case screenshots
     case videos
-
+    
     var id: String {
         switch self {
         case .contacts: return "contacts"
@@ -22,181 +22,76 @@ enum CategoryViewType: Identifiable, Hashable {
     }
 }
 
-struct ScanView: View {
-    @StateObject private var viewModel = ScanViewModel()
+struct MainView: View {
+    @StateObject private var viewModel = MainViewModel()
     @Binding var isPaywallPresented: Bool
-
+    
     @State private var presentedView: CategoryViewType?
     
     init(isPaywallPresented: Binding<Bool>) {
         self._isPaywallPresented = isPaywallPresented
-        print("SCAN:TEST - ScanView init called")
+        print("SCAN:TEST - MainViewModel init called")
     }
-
+    
     private var scalingFactor: CGFloat {
         UIScreen.main.bounds.height / 844
     }
     
+    private var categories: [ScanItemType] {
+        [.similar, .duplicates, .blurred, .screenshots, .videos, .contacts, .calendar]
+    }
+    
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24 * scalingFactor) {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack {
+        ZStack {
+            Color.white.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    
+                    // Header Section
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("AI-Clean-Space")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(CMColor.primaryText)
-
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.black)
+                        
                         if viewModel.progress < 1 {
                             Text("Scanning: \(Int(viewModel.progress * 100))%")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(CMColor.secondaryText)
-                                .onAppear {
-                                    print("SCAN:TEST - Scanning text displayed with progress: \(viewModel.progress)")
-                                }
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.gray)
                         } else {
                             Text(viewModel.subtitle)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(CMColor.secondaryText)
-                                .onAppear {
-                                    print("SCAN:TEST - Subtitle displayed: \(viewModel.subtitle)")
-                                }
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.gray)
                         }
                     }
+                    .padding(.top, 20)
+                    .padding(.horizontal)
+                    
+                    // Categories Section
+                    VStack(spacing: 16) {
+                        ForEach(categories, id: \.self) { type in
+                            Button(action: {
+                                handleTap(for: type)
+                            }) {
+                                CategoryRowView(
+                                    type: type,
+                                    viewModel: viewModel,
+                                    generateEmptyStateImage: generateEmptyStateImage
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal)
                 }
-
-                HStack(spacing: 24 * scalingFactor) {
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            handleContactsButtonTap()
-                        }
-                    } label: {
-                        getItem(
-                            for: .contacts, 
-                            image: contactsStateImage(), 
-                            count: viewModel.contactsCount, 
-                            sizeStr: contactsSizeString(), 
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            handleCalendarButtonTap()
-                        }
-                    } label: {
-                        getItem(
-                            for: .calendar, 
-                            image: calendarStateImage(), 
-                            count: viewModel.calendarEventsCount, 
-                            sizeStr: calendarSizeString(), 
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-                }
-                .onAppear {
-                    viewModel.scanContacts()
-                    viewModel.scanCalendar()
-                }
-                HStack(spacing: 24 * scalingFactor) {
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            presentedView = .similarPhotos
-                        }
-                    } label: {
-                        getItem(
-                            for: .similar,
-                            image: viewModel.previews.similar,
-                            count: viewModel.counts.similar,
-                            sizeStr: viewModel.megabytes.similar.formatAsFileSize(),
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            presentedView = .duplicates
-                        }
-                    } label: {
-                        getItem(
-                            for: .duplicates,
-                            image: viewModel.previews.duplicates,
-                            count: viewModel.counts.duplicates,
-                            sizeStr: viewModel.megabytes.duplicates.formatAsFileSize(),
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-                }
-                HStack(spacing: 24 * scalingFactor) {
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            presentedView = .blurryPhotos
-                        }
-                    } label: {
-                        getItem(
-                            for: .blurred,
-                            image: viewModel.previews.blurred,
-                            count: viewModel.counts.blurred,
-                            sizeStr: viewModel.megabytes.blurred.formatAsFileSize(),
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            presentedView = .screenshots
-                        }
-                    } label: {
-                        getItem(
-                            for: .screenshots,
-                            image: viewModel.previews.screenshots,
-                            count: viewModel.counts.screenshots,
-                            sizeStr: viewModel.megabytes.screenshots.formatAsFileSize(),
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-                }
-                HStack(spacing: 24 * scalingFactor) {
-                    Button {
-                        if !viewModel.hasActiveSubscription {
-                            isPaywallPresented = true
-                        } else {
-                            presentedView = .videos
-                        }
-                    } label: {
-                        getItem(
-                            for: .videos,
-                            image: viewModel.previews.videos,
-                            count: viewModel.counts.videos,
-                            sizeStr: viewModel.megabytes.videos.formatAsFileSize(),
-                            size: UIScreen.main.bounds.width / 2 - 24 * scalingFactor
-                        )
-                    }
-
-                    Spacer()
-                }
+                .padding(.bottom, 100)
             }
-            .padding(.horizontal, 16 * scalingFactor)
-            .padding(.bottom, 100 * scalingFactor)
-        }
-        .onAppear {
-            print("SCAN:TEST - ScanView onAppear called")
-            print("SCAN:TEST - Current viewModel.progress: \(viewModel.progress)")
-            print("SCAN:TEST - Current viewModel.counts.total: \(viewModel.counts.total)")
-            viewModel.onAppear()
-        }
-        .fullScreenCover(item: $presentedView) { viewType in
-                // Здесь мы создаем нужный экран в зависимости от viewType
+            .onAppear {
+                viewModel.onAppear()
+                viewModel.scanContacts()
+                viewModel.scanCalendar()
+            }
+            .fullScreenCover(item: $presentedView) { viewType in
                 switch viewType {
                 case .contacts:
                     ContactsView()
@@ -239,212 +134,149 @@ struct ScanView: View {
                     )
                 }
             }
-    }
-
-    private func getItem(
-        for type: ScanItemType,
-        image: UIImage?,
-        count: Int,
-        sizeStr: String,
-        size: CGFloat
-    ) -> some View {
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .frame(width: size, height: size)
-                    .scaledToFit()
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
-            }
-
-            VStack {
-                HStack {
-                    Text(type.title)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(CMColor.primaryText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(CMColor.border)
-                        .cornerRadius(12)
-
-                    Spacer()
-                }
-
-                Spacer()
-
-                HStack {
-                    Text(getItemCountText(for: type, count: count, sizeStr: sizeStr))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(CMColor.primaryText)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(CMColor.background)
-                        .cornerRadius(12)
-
-                    Spacer()
-                }
-            }
-            .padding(12)
-        }
-        .frame(width: size, height: size)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .foregroundStyle(CMColor.backgroundSecondary)
-        )
-        .clipped()
-    }
-    
-    // MARK: - Helper Methods for Contacts and Calendar
-    
-    private func handleContactsButtonTap() {
-        switch viewModel.contactsPermissionStatus {
-        case .authorized:
-            // Переходим на экран контактов если есть разрешения
-            presentedView = .contacts
-        case .denied:
-            // Если разрешение отклонено, перебрасываем в настройки
-            print("SCAN:TEST - Contacts permission denied, opening settings")
-            viewModel.openAppSettings()
-        case .notDetermined, .loading:
-            // Во время загрузки или при неопределенном состоянии - ничего не делаем
-            print("SCAN:TEST - Contacts button tapped but permission in progress: \(viewModel.contactsPermissionStatus)")
         }
     }
     
-    private func handleCalendarButtonTap() {
-        switch viewModel.calendarPermissionStatus {
-        case .authorized:
-            // Переходим на экран календаря если есть разрешения
-            presentedView = .calendar
-        case .denied:
-            // Если разрешение отклонено, перебрасываем в настройки
-            print("SCAN:TEST - Calendar permission denied, opening settings")
-            viewModel.openAppSettings()
-        case .notDetermined, .loading:
-            // Во время загрузки или при неопределенном состоянии - ничего не делаем
-            print("SCAN:TEST - Calendar button tapped but permission in progress: \(viewModel.calendarPermissionStatus)")
-        }
-    }
-    
-    private func contactsStateImage() -> UIImage? {
-        switch viewModel.contactsPermissionStatus {
-        case .notDetermined:
-            return generateEmptyStateImage(systemName: "person.badge.key.fill", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemYellow : .systemOrange
-            })
-        case .denied:
-            return generateEmptyStateImage(systemName: "person.fill.xmark", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemRed : .systemRed
-            })
-        case .loading:
-            return generateEmptyStateImage(systemName: "person.fill", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemGray : .systemGray3
-            })
-        case .authorized:
-            if viewModel.isContactsLoading {
-                return generateEmptyStateImage(systemName: "person.fill", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemGray : .systemGray3
-                })
-            } else if viewModel.contactsCount == 0 {
-                return generateEmptyStateImage(systemName: "person.2.fill", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemBlue : .systemBlue
-                })
-            } else {
-                return generateEmptyStateImage(systemName: "person.crop.circle.fill", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemBlue : .systemBlue
-                })
-            }
-        }
-    }
-    
-    private func calendarStateImage() -> UIImage? {
-        switch viewModel.calendarPermissionStatus {
-        case .notDetermined:
-            return generateEmptyStateImage(systemName: "calendar.badge.plus", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemYellow : .systemOrange
-            })
-        case .denied:
-            return generateEmptyStateImage(systemName: "calendar.badge.exclamationmark", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemRed : .systemRed
-            })
-        case .loading:
-            return generateEmptyStateImage(systemName: "calendar", color: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .systemGray : .systemGray3
-            })
-        case .authorized:
-            if viewModel.isCalendarLoading {
-                return generateEmptyStateImage(systemName: "calendar", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemGray : .systemGray3
-                })
-            } else if viewModel.calendarEventsCount == 0 {
-                return generateEmptyStateImage(systemName: "calendar.circle.fill", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemBlue : .systemBlue
-                })
-            } else {
-                return generateEmptyStateImage(systemName: "calendar.badge.clock", color: UIColor { traitCollection in
-                    traitCollection.userInterfaceStyle == .dark ? .systemGreen : .systemGreen
-                })
-            }
-        }
-    }
-    
-    private func contactsSizeString() -> String {
-        return viewModel.contactsCount > 0 ? "" : ""
-    }
-    
-    private func calendarSizeString() -> String {
-        return viewModel.calendarEventsCount > 0 ? "" : ""
-    }
-    
+    // Переместил этот метод сюда, чтобы он не лез в логику ViewModel
     private func generateEmptyStateImage(systemName: String, color: UIColor) -> UIImage? {
-        // Создаем прозрачное изображение с иконкой по центру
         let config = UIImage.SymbolConfiguration(pointSize: 60, weight: .regular, scale: .large)
         let image = UIImage(systemName: systemName, withConfiguration: config)
         return image?.withTintColor(color, renderingMode: .alwaysOriginal)
     }
     
-    private func getItemCountText(for type: ScanItemType, count: Int, sizeStr: String) -> String {
+    private func handleTap(for type: ScanItemType) {
+        if !viewModel.hasActiveSubscription {
+            isPaywallPresented = true
+            return
+        }
+        
+        switch type {
+        case .contacts:
+            if viewModel.contactsPermissionStatus == .authorized {
+                presentedView = .contacts
+            } else if viewModel.contactsPermissionStatus == .denied {
+                viewModel.openAppSettings()
+            }
+        case .calendar:
+            if viewModel.calendarPermissionStatus == .authorized {
+                presentedView = .calendar
+            } else if viewModel.calendarPermissionStatus == .denied {
+                viewModel.openAppSettings()
+            }
+        case .similar:
+            presentedView = .similarPhotos
+        case .duplicates:
+            presentedView = .duplicates
+        case .blurred:
+            presentedView = .blurryPhotos
+        case .screenshots:
+            presentedView = .screenshots
+        case .videos:
+            presentedView = .videos
+        }
+    }
+}
+
+// MARK: - Category Row View
+struct CategoryRowView: View {
+    let type: ScanItemType
+    @ObservedObject var viewModel: MainViewModel
+    // Добавил замыкание для передачи метода
+    let generateEmptyStateImage: (String, UIColor) -> UIImage?
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                if let image = getPreviewImage() {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 60, height: 60)
+                        .clipped()
+                        .cornerRadius(12)
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(UIColor.systemGray5))
+                        .frame(width: 60, height: 60)
+                }
+            }
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 5)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(type.title)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.black)
+                
+                Text(getItemCountText())
+                    .font(.callout)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+        }
+        .padding(12)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+    
+    // Теперь этот метод использует переданное замыкание
+    private func getPreviewImage() -> UIImage? {
+        switch type {
+        case .contacts:
+            return viewModel.contactsPermissionStatus == .authorized ?
+            generateEmptyStateImage("person.circle.fill", .systemBlue) :
+            generateEmptyStateImage("person.fill.questionmark", .systemOrange)
+        case .calendar:
+            return viewModel.calendarPermissionStatus == .authorized ?
+            generateEmptyStateImage("calendar.badge.clock", .systemGreen) :
+            generateEmptyStateImage("calendar.badge.exclamationmark", .systemOrange)
+        case .similar:
+            return viewModel.previews.similar
+        case .duplicates:
+            return viewModel.previews.duplicates
+        case .blurred:
+            return viewModel.previews.blurred
+        case .screenshots:
+            return viewModel.previews.screenshots
+        case .videos:
+            return viewModel.previews.videos
+        }
+    }
+    
+    private func getItemCountText() -> String {
         switch type {
         case .contacts:
             switch viewModel.contactsPermissionStatus {
-            case .notDetermined:
-                return "Requesting permission..."
-            case .denied:
-                return "Tap to open Settings"
-            case .loading:
-                return "Requesting access..."
             case .authorized:
-                if viewModel.isContactsLoading {
-                    return "Loading contacts..."
-                } else if count == 0 {
-                    return "No contacts"
-                } else {
-                    return "\(count) contacts"
-                }
+                return viewModel.isContactsLoading ? "Loading contacts..." :
+                    (viewModel.contactsCount == 0 ? "No contacts" : "\(viewModel.contactsCount) contacts")
+            case .notDetermined: return "Requesting permission..."
+            case .denied: return "Tap to open Settings"
+            case .loading: return "Checking access..."
             }
         case .calendar:
             switch viewModel.calendarPermissionStatus {
-            case .notDetermined:
-                return "Requesting permission..."
-            case .denied:
-                return "Tap to open Settings"
-            case .loading:
-                return "Requesting access..."
             case .authorized:
-                if viewModel.isCalendarLoading {
-                    return "Loading events..."
-                } else if count == 0 {
-                    return "No events"
-                } else {
-                    return "\(count) events"
-                }
+                return viewModel.isCalendarLoading ? "Loading events..." :
+                    (viewModel.calendarEventsCount == 0 ? "No events" : "\(viewModel.calendarEventsCount) events")
+            case .notDetermined: return "Requesting permission..."
+            case .denied: return "Tap to open Settings"
+            case .loading: return "Checking access..."
             }
-        case .similar, .duplicates, .blurred, .screenshots, .videos:
-            if count == 0 {
-                return "No items"
-            } else {
-                return "\(count) items • \(sizeStr)"
-            }
+        case .similar:
+            return "\(viewModel.counts.similar) items • \(viewModel.megabytes.similar.formatAsFileSize())"
+        case .duplicates:
+            return "\(viewModel.counts.duplicates) items • \(viewModel.megabytes.duplicates.formatAsFileSize())"
+        case .blurred:
+            return "\(viewModel.counts.blurred) items • \(viewModel.megabytes.blurred.formatAsFileSize())"
+        case .screenshots:
+            return "\(viewModel.counts.screenshots) items • \(viewModel.megabytes.screenshots.formatAsFileSize())"
+        case .videos:
+            return "\(viewModel.counts.videos) items • \(viewModel.megabytes.videos.formatAsFileSize())"
         }
     }
 }

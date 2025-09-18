@@ -383,9 +383,7 @@ struct SmartCleanView: View {
             .buttonStyle(.plain)
         }
     }
-    
-    // MARK: - Get Item (From ScanView)
-    
+        
     private func getItem(
         for type: ScanItemType,
         image: UIImage?,
