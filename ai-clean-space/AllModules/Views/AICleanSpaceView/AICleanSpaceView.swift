@@ -14,7 +14,6 @@ struct AICleanSpaceView: View {
 
     var body: some View {
         ZStack {
-            // Фон
             CMColor.background
                 .ignoresSafeArea()
 
@@ -45,14 +44,10 @@ struct AICleanSpaceView: View {
                 VStack {
                     Spacer()
 
-                    CustomTabBar(selectedTab: $viewModel.currentSelectedTab)
-                        .padding(.bottom, 16 * scalingFactor)
+                    MainTabBar(selectedTab: $viewModel.currentSelectedTab)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-        }
-        .onAppear {
-            //
         }
     }
     

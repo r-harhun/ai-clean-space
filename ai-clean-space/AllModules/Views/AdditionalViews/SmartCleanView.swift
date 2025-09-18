@@ -109,21 +109,17 @@ struct SmartCleanView: View {
                 isPaywallPresented = true
             }) { 
                 HStack(spacing: 8) {
-                    Text("Pro")
-                        .fontWeight(.semibold)
                     Image(systemName: "star.fill")
                         .font(.system(size: 16))
+                        .foregroundColor(CMColor.primaryLight)
+                    
+                    Text("Pro")
+                        .fontWeight(.semibold)
+                        .foregroundColor(CMColor.primaryLight)
                 }
-                .foregroundColor(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(
-                    LinearGradient(
-                        colors: [Color.purple, Color.blue],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .background(CMColor.backgroundSecondary)
                 .clipShape(Capsule())
             }
         }

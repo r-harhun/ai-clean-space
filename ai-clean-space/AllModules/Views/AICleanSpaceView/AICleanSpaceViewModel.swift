@@ -5,6 +5,13 @@ import Photos
 
 @MainActor
 final class AICleanSpaceViewModel: ObservableObject {
+    enum TabType: String, CaseIterable {
+        case clean = "Clean"
+        case dashboard = "Dashboard"
+        case star = "Star"
+        case safeFolder = "Safe Folder"
+        case backup = "Backup"
+    }
     
     // MARK: - Published Properties
     @Published var mainScanState: ScanningState = .idle
@@ -92,25 +99,6 @@ final class AICleanSpaceViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.videosPreview, on: self)
             .store(in: &cancellables)
-    }
-    
-    // MARK: - Tab Types
-    enum TabType: String, CaseIterable {
-        case clean = "Clean"
-        case dashboard = "Dashboard"
-        case star = "Star"
-        case safeFolder = "Safe Folder"
-        case backup = "Backup"
-        
-        var iconName: String {
-            switch self {
-            case .clean: return "paintbrush"
-            case .dashboard: return "square.grid.2x2"
-            case .star: return "sparkles"
-            case .safeFolder: return "folder"
-            case .backup: return "square.and.arrow.up"
-            }
-        }
     }
     
     // MARK: - Computed Properties
