@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct ImageDocumentPreviewView: View {
     let document: SafeDocumentData

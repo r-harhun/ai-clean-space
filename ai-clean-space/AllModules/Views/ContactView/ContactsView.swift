@@ -2,7 +2,6 @@ import SwiftUI
 import CoreData
 import Contacts
 import ContactsUI
-import UIKit
 
 // MARK: - Contact Category Enum
 enum ContactCategory: String, CaseIterable {

@@ -4,7 +4,7 @@ import Photos
 
 struct SimilarView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var photoAnalysisService = PhotoAnalysisService()
+    @StateObject private var picsAnalyserService = PicsAnalyserService()
     
     let mode: SimilarPhotosMode
     
@@ -19,9 +19,9 @@ struct SimilarView: View {
     private var photoGroups: [PhotoGroupModel] {
         switch mode {
         case .duplicates:
-            return photoAnalysisService.duplicateGroups
+            return picsAnalyserService.duplicateGroups
         case .similar:
-            return photoAnalysisService.similarGroups
+            return picsAnalyserService.similarGroups
         }
     }
 
@@ -99,12 +99,12 @@ struct SimilarView: View {
             ProgressView()
                 .scaleEffect(1.5)
             
-            Text(photoAnalysisService.isAnalyzing ? "Analyzing photos..." : "Loading photos...")
+            Text(picsAnalyserService.isAnalyzing ? "Analyzing photos..." : "Loading photos...")
                 .font(.system(size: 17, weight: .medium))
                 .foregroundColor(CMColor.secondaryText)
             
-            if photoAnalysisService.isAnalyzing {
-                ProgressView(value: photoAnalysisService.analysisProgress)
+            if picsAnalyserService.isAnalyzing {
+                ProgressView(value: picsAnalyserService.analysisProgress)
                     .progressViewStyle(LinearProgressViewStyle())
                     .frame(width: 200)
             }
@@ -251,9 +251,9 @@ struct SimilarView: View {
         Task {
             switch mode {
             case .duplicates:
-                await photoAnalysisService.findDuplicatePhotos()
+                await picsAnalyserService.findDuplicatePhotos()
             case .similar:
-                await photoAnalysisService.findSimilarPhotos()
+                await picsAnalyserService.findSimilarPhotos()
             }
             
             await MainActor.run {

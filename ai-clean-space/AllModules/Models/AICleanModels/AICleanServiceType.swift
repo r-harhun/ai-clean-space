@@ -1,5 +1,4 @@
 import Photos
-import UIKit
 
 enum AICleanServiceType: Equatable {
     static let image = Self.image(.duplicates)

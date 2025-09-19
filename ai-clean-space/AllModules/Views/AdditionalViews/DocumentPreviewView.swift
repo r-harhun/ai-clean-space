@@ -1,6 +1,5 @@
 import SwiftUI
 import QuickLook
-import UIKit
 
 struct DocumentPreviewView: View {
     let document: SafeDocumentData

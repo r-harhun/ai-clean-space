@@ -1,7 +1,5 @@
 import SwiftUI
 import Combine
-import UIKit
-
 
 // MARK: - Протоколы и Enum для Speedometer
 

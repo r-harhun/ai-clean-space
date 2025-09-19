@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct SwipeOnboardingView: View {
     @Environment(\.dismiss) private var dismiss

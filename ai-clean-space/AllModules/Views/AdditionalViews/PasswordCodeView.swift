@@ -1,6 +1,5 @@
 import SwiftUI
 import LocalAuthentication
-import UIKit
 
 struct PINView: View {
     @State private var inputCode: String = ""

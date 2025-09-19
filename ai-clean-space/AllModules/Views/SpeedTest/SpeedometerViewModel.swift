@@ -1,6 +1,5 @@
 import SwiftUI
 import Combine
-import UIKit
 import os.log
 
 // MARK: - Модель данных для скорости (совместимость)

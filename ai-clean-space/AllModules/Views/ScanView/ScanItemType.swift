@@ -1,5 +1,3 @@
-import UIKit
-
 enum ScanItemType: Identifiable, Hashable {
     case contacts
     case calendar

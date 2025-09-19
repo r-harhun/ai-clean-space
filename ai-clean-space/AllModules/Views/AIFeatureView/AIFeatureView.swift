@@ -1,6 +1,5 @@
 import SwiftUI
 import Combine
-import UIKit
 
 struct AIFeatureView: View {
     @StateObject private var viewModel = AIFeatureViewModel()
