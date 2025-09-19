@@ -32,7 +32,7 @@ struct AIFeatureView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .fullScreenCover(item: $presentedSwipeView) { swipeData in
-            SwipePhotoDetailView(
+            AIFeatureSwipeDetailView(
                 sections: swipeData.sections,
                 initialIndex: 0,
                 viewModel: SimilaritySectionsViewModel(

@@ -19,7 +19,7 @@ class AIFeatureViewModel: ObservableObject {
     @Published var screenshotsPreview: UIImage?
     
     // Swipe results tracking
-    @Published var swipeDecisions: [String: PhotoSwipeDecision] = [:]
+    @Published var swipeDecisions: [String: AIFeatureSwipeDecision] = [:]
     @Published var totalSwipeDecisionsForDeletion = 0
     
     var hasSwipeResults: Bool {
@@ -54,7 +54,7 @@ class AIFeatureViewModel: ObservableObject {
         return mediaCleanerService.getMedia(type)
     }
     
-    func processSwipeDecisions(_ decisions: [String: PhotoSwipeDecision]) {
+    func processSwipeDecisions(_ decisions: [String: AIFeatureSwipeDecision]) {
         swipeDecisions = decisions
         updateTotalSwipeDecisionsCount()
     }
@@ -116,13 +116,13 @@ class AIFeatureViewModel: ObservableObject {
             getSections(for: .image(.screenshots))
         ].flatMap { $0 }
         
-        var loadedDecisions: [String: PhotoSwipeDecision] = [:]
+        var loadedDecisions: [String: AIFeatureSwipeDecision] = [:]
         
         for section in allSections {
             for model in section.models {
                 let assetId = model.asset.localIdentifier
                 if let cacheDecision = cacheService.getSwipeDecision(id: assetId) {
-                    let photoDecision: PhotoSwipeDecision = cacheDecision ? .keep : .delete
+                    let photoDecision: AIFeatureSwipeDecision = cacheDecision ? .keep : .delete
                     loadedDecisions[assetId] = photoDecision
                 }
             }

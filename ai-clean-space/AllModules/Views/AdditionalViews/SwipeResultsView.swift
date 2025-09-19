@@ -58,7 +58,7 @@ struct SwipeResultsView: View {
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showRemovePhotosView) {
             let removeSections = viewModel.getSectionsForAssetIdentifiers(resultsData.removePhotos)
-            SwipePhotoDetailView(
+            AIFeatureSwipeDetailView(
                 sections: removeSections,
                 initialIndex: 0,
                 viewModel: SimilaritySectionsViewModel(
@@ -76,7 +76,7 @@ struct SwipeResultsView: View {
         }
         .fullScreenCover(isPresented: $showSavedPhotosView) {
             let savedSections = viewModel.getSectionsForAssetIdentifiers(resultsData.savedPhotos)
-            SwipePhotoDetailView(
+            AIFeatureSwipeDetailView(
                 sections: savedSections,
                 initialIndex: 0,
                 viewModel: SimilaritySectionsViewModel(
