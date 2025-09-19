@@ -7,7 +7,7 @@ struct AIFeatureView: View {
     @Binding var isPaywallPresented: Bool
     
     @State private var presentedSwipeView: SwipedPhotoModel?
-    @State private var presentedResultsView: SwipeResultsData?
+    @State private var presentedResultsView: AICleanResultSwipeData?
     @State private var showSwipeOnboarding = false
     
     var body: some View {
@@ -54,7 +54,7 @@ struct AIFeatureView: View {
             )
         }
         .fullScreenCover(item: $presentedResultsView) { _ in
-            SwipeResultsView(
+            AICleanResultSwipeView(
                 viewModel: viewModel,
                 onFinish: { photosToDelete in
                     viewModel.finalizePhotoDeletion(photosToDelete)

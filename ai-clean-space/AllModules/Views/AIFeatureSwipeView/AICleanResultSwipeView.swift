@@ -1,49 +1,30 @@
 import SwiftUI
-import UIKit
 
-struct SwipeResultsData: Identifiable {
-    let id = UUID()
-    let savedCount: Int
-    let removeCount: Int
-    let savedPhotos: [String] // asset localIdentifiers
-    let removePhotos: [String] // asset localIdentifiers
-}
-
-struct SwipeResultsView: View {
+struct AICleanResultSwipeView: View {
     @ObservedObject var viewModel: AIFeatureViewModel
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismissView
     
-    // Computed property для получения актуальных данных
-    private var resultsData: SwipeResultsData {
+    private var swipeResultsData: AICleanResultSwipeData {
         let data = viewModel.getSwipeResultsData()
-        print("UPDATE:COUNT:TEST - SwipeResultsView computed resultsData: savedCount=\(data.savedCount), removeCount=\(data.removeCount)")
         return data
     }
     
-    // State для показа SwipePhotoDetailView
-    @State private var showRemovePhotosView = false
-    @State private var showSavedPhotosView = false
+    @State private var showingRemovedPhotos = false
+    @State private var showingKeptPhotos = false
     
-    // Callback для обработки финального удаления
     var onFinish: ([String]) -> Void
-    
-    // Callback для обновления данных после каждого свайпа  
     var onSwipeDecisionChanged: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 0) {
-            navigationBarView()
+            setupNavigationBar()
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Saved section
-                    savedSection()
-                    
-                    // Remove section  
-                    removeSection()
-                    
+                    keptSectionView()
+                    removedSectionView()
                     Spacer()
-                        .frame(height: 100) // Space for bottom button
+                        .frame(height: 100)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -51,56 +32,45 @@ struct SwipeResultsView: View {
             
             Spacer()
             
-            // Bottom button
-            bottomButtonView()
+            bottomActionButtonsView()
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showRemovePhotosView) {
-            let removeSections = viewModel.getSectionsForAssetIdentifiers(resultsData.removePhotos)
+        .fullScreenCover(isPresented: $showingRemovedPhotos) {
+            let removeSections = viewModel.getSectionsForAssetIdentifiers(swipeResultsData.deletedPhotos)
             AIFeatureSwipeDetailView(
                 sections: removeSections,
                 initialIndex: 0,
                 viewModel: SimilaritySectionsViewModel(
                     sections: removeSections,
-                    type: .similar // Можно использовать любой тип, так как отображаем смешанные результаты
+                    type: .similar
                 ),
                 mode: .resultsView,
-                onFinish: { updatedDecisions in
-                    // Обработка обновленных решений после просмотра
-                    print("SWIPE:RESULTS - Updated decisions from remove photos view: \(updatedDecisions.count)")
-                    // Здесь можно обновить данные, если нужно
-                },
+                onFinish: { _ in },
                 onSwipeDecisionChanged: onSwipeDecisionChanged
             )
         }
-        .fullScreenCover(isPresented: $showSavedPhotosView) {
-            let savedSections = viewModel.getSectionsForAssetIdentifiers(resultsData.savedPhotos)
+        .fullScreenCover(isPresented: $showingKeptPhotos) {
+            let savedSections = viewModel.getSectionsForAssetIdentifiers(swipeResultsData.keptPhotos)
             AIFeatureSwipeDetailView(
                 sections: savedSections,
                 initialIndex: 0,
                 viewModel: SimilaritySectionsViewModel(
                     sections: savedSections,
-                    type: .similar // Можно использовать любой тип, так как отображаем смешанные результаты
+                    type: .similar
                 ),
                 mode: .resultsView,
-                onFinish: { updatedDecisions in
-                    // Обработка обновленных решений после просмотра
-                    print("SWIPE:RESULTS - Updated decisions from saved photos view: \(updatedDecisions.count)")
-                    // Здесь можно обновить данные, если нужно
-                },
+                onFinish: { _ in  },
                 onSwipeDecisionChanged: onSwipeDecisionChanged
             )
         }
     }
-    
-    // MARK: - Navigation Bar
-    
+            
     @ViewBuilder
-    private func navigationBarView() -> some View {
+    private func setupNavigationBar() -> some View {
         HStack {
             Button {
-                dismiss()
+                dismissView()
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -120,8 +90,7 @@ struct SwipeResultsView: View {
             Spacer()
             
             Button {
-                // Finish without deletion - just dismiss
-                dismiss()
+                dismissView()
             } label: {
                 Text("Finish")
                     .font(.system(size: 17, weight: .semibold))
@@ -132,14 +101,12 @@ struct SwipeResultsView: View {
         .padding(.vertical, 12)
         .background(Color(.systemBackground))
     }
-    
-    // MARK: - Saved Section
-    
+            
     @ViewBuilder
-    private func savedSection() -> some View {
+    private func keptSectionView() -> some View {
         Button {
-            if resultsData.savedCount > 0 {
-                showSavedPhotosView = true
+            if swipeResultsData.keptCount > 0 {
+                showingKeptPhotos = true
             }
         } label: {
             HStack(spacing: 16) {
@@ -148,7 +115,7 @@ struct SwipeResultsView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                    
+                        
                     Text("These photos remain on the device")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -157,10 +124,10 @@ struct SwipeResultsView: View {
                 Spacer()
                 
                 HStack(spacing: 8) {
-                    Text("\(resultsData.savedCount)")
+                    Text("\(swipeResultsData.keptCount)")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.secondary)
-                    
+                        
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary.opacity(0.6))
@@ -172,16 +139,14 @@ struct SwipeResultsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-        .disabled(resultsData.savedCount == 0)
+        .disabled(swipeResultsData.keptCount == 0)
     }
-    
-    // MARK: - Remove Section
-    
+            
     @ViewBuilder
-    private func removeSection() -> some View {
+    private func removedSectionView() -> some View {
         Button {
-            if resultsData.removeCount > 0 {
-                showRemovePhotosView = true
+            if swipeResultsData.deletedCount > 0 {
+                showingRemovedPhotos = true
             }
         } label: {
             HStack(spacing: 16) {
@@ -190,7 +155,7 @@ struct SwipeResultsView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                    
+                        
                     Text("These photos will be deleted")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -199,10 +164,10 @@ struct SwipeResultsView: View {
                 Spacer()
                 
                 HStack(spacing: 8) {
-                    Text("\(resultsData.removeCount)")
+                    Text("\(swipeResultsData.deletedCount)")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.secondary)
-                    
+                        
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary.opacity(0.6))
@@ -214,26 +179,22 @@ struct SwipeResultsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
-        .disabled(resultsData.removeCount == 0)
+        .disabled(swipeResultsData.deletedCount == 0)
     }
-    
-    // MARK: - Bottom Button
-    
+            
     @ViewBuilder
-    private func bottomButtonView() -> some View {
+    private func bottomActionButtonsView() -> some View {
         VStack(spacing: 16) {
-            if resultsData.removeCount > 0 {
+            if swipeResultsData.deletedCount > 0 {
                 Button {
-                    // Perform deletion
-                    onFinish(resultsData.removePhotos)
+                    onFinish(swipeResultsData.deletedPhotos)
                     
-                    // Add haptic feedback
                     let impact = UIImpactFeedbackGenerator(style: .medium)
                     impact.impactOccurred()
                     
-                    dismiss()
+                    dismissView()
                 } label: {
-                    Text("Delete \(resultsData.removeCount) photos")
+                    Text("Delete \(swipeResultsData.deletedCount) photos")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -249,7 +210,7 @@ struct SwipeResultsView: View {
                 }
             } else {
                 Button {
-                    dismiss()
+                    dismissView()
                 } label: {
                     Text("No photos to delete")
                         .font(.system(size: 18, weight: .semibold))
@@ -263,7 +224,7 @@ struct SwipeResultsView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 34) // Safe area bottom padding
+        .padding(.bottom, 34)
         .background(Color(.systemBackground))
     }
 }

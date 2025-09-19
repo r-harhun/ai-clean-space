@@ -59,7 +59,7 @@ class AIFeatureViewModel: ObservableObject {
         updateTotalSwipeDecisionsCount()
     }
     
-    func getSwipeResultsData() -> SwipeResultsData {
+    func getSwipeResultsData() -> AICleanResultSwipeData {
         let allSections = [
             getSections(for: .image(.similar)),
             getSections(for: .image(.blurred)),
@@ -83,11 +83,11 @@ class AIFeatureViewModel: ObservableObject {
             }
         }
         
-        let data = SwipeResultsData(
-            savedCount: savedPhotos.count,
-            removeCount: removePhotos.count,
-            savedPhotos: savedPhotos,
-            removePhotos: removePhotos
+        let data = AICleanResultSwipeData(
+            keptCount: savedPhotos.count,
+            deletedCount: removePhotos.count,
+            keptPhotos: savedPhotos,
+            deletedPhotos: removePhotos
         )
         
         return data
