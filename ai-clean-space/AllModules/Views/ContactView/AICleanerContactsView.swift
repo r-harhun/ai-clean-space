@@ -22,6 +22,8 @@ struct AICleanerContactsView: View {
                 
                 VStack(spacing: 0) {
                     headerView(scalingFactor: scalingFactor)
+                        .background(CMColor.backgroundSecondary)
+                        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
                     
                     if !permissionManager.canAccessContacts {
                         permissionRequestView(scalingFactor: scalingFactor)
@@ -81,50 +83,44 @@ struct AICleanerContactsView: View {
     
     // MARK: - Header View
     private func headerView(scalingFactor: CGFloat) -> some View {
-        HStack {
+        HStack(spacing: 16 * scalingFactor) {
             Button(action: {
                 dismiss()
             }) {
-                HStack(spacing: 6 * scalingFactor) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16 * scalingFactor, weight: .medium))
-                        .foregroundColor(CMColor.primary)
-                    
-                    Text("Back")
-                        .font(.system(size: 17 * scalingFactor, weight: .regular))
-                        .foregroundColor(CMColor.primary)
-                }
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28 * scalingFactor))
+                    .foregroundColor(CMColor.secondaryText)
             }
-            .frame(width: 80 * scalingFactor, alignment: .leading)
             
             Spacer()
             
             VStack(spacing: 4 * scalingFactor) {
                 Text("Contacts")
-                    .font(.system(size: 20 * scalingFactor, weight: .semibold))
+                    .font(.system(size: 24 * scalingFactor, weight: .bold))
                     .foregroundColor(CMColor.primaryText)
                 
                 if viewModel.isLoading {
-                    HStack(spacing: 4 * scalingFactor) {
+                    HStack(spacing: 8 * scalingFactor) {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: CMColor.primary))
                             .scaleEffect(0.6)
                         
                         Text("Scanning...")
-                            .font(.system(size: 12 * scalingFactor, weight: .medium))
+                            .font(.system(size: 14 * scalingFactor, weight: .medium))
                             .foregroundColor(CMColor.secondaryText)
                     }
                 } else if !viewModel.duplicateGroups.isEmpty {
                     let totalDuplicates = viewModel.duplicateGroups.flatMap { $0 }.count
                     Text("\(viewModel.duplicateGroups.count) groups • \(totalDuplicates) duplicates")
-                        .font(.system(size: 12 * scalingFactor, weight: .medium))
+                        .font(.system(size: 14 * scalingFactor, weight: .medium))
                         .foregroundColor(CMColor.error)
                 } else if !viewModel.systemContacts.isEmpty {
                     Text("\(viewModel.systemContacts.count) contacts • No duplicates")
-                        .font(.system(size: 12 * scalingFactor, weight: .medium))
+                        .font(.system(size: 14 * scalingFactor, weight: .medium))
                         .foregroundColor(CMColor.success)
                 }
             }
+            .frame(maxWidth: .infinity)
             
             Spacer()
             
@@ -134,19 +130,17 @@ struct AICleanerContactsView: View {
                 }
             }) {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 16 * scalingFactor, weight: .medium))
+                    .font(.system(size: 28 * scalingFactor, weight: .medium))
                     .foregroundColor(CMColor.primary)
                     .rotationEffect(viewModel.isLoading ? Angle(degrees: 360) : Angle(degrees: 0))
                     .animation(viewModel.isLoading ?
                                Animation.linear(duration: 1).repeatForever(autoreverses: false) :
-                            .default, value: viewModel.isLoading)
+                               .default, value: viewModel.isLoading)
             }
             .disabled(viewModel.isLoading)
-            .frame(width: 80 * scalingFactor, alignment: .trailing)
         }
-        .padding(.horizontal, 16 * scalingFactor)
-        .padding(.top, 8 * scalingFactor)
-        .padding(.bottom, 20 * scalingFactor)
+        .padding(.horizontal, 24 * scalingFactor)
+        .padding(.vertical, 16 * scalingFactor)
     }
     
     private func contactCategoryButton(category: ContactCategory, scalingFactor: CGFloat) -> some View {
@@ -160,46 +154,57 @@ struct AICleanerContactsView: View {
                 showIncomplete = true
             }
         }) {
-            HStack(spacing: 16 * scalingFactor) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12 * scalingFactor)
-                        .fill(CMColor.primary.opacity(0.1))
-                        .frame(width: 56 * scalingFactor, height: 56 * scalingFactor)
+            VStack(alignment: .leading, spacing: 12 * scalingFactor) {
+                // Main content of the button
+                HStack(alignment: .center, spacing: 16 * scalingFactor) { // Changed alignment to center
+                    VStack(alignment: .leading, spacing: 8 * scalingFactor) {
+                        
+                        // Icon
+                        Image(systemName: category.systemImage)
+                            .font(.system(size: 36 * scalingFactor, weight: .regular))
+                            .foregroundColor(.white)
+                            .shadow(radius: 5)
+                        
+                        // Title
+                        Text(category.rawValue)
+                            .font(.system(size: 20 * scalingFactor, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        // Subtitle
+                        Text(getSubtitleForCategory(category))
+                            .font(.system(size: 14 * scalingFactor, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                     
-                    Image(systemName: category.systemImage)
-                        .font(.system(size: 24 * scalingFactor, weight: .medium))
-                        .foregroundColor(CMColor.primary)
-                }
-                
-                VStack(alignment: .leading, spacing: 4 * scalingFactor) {
-                    Text(category.rawValue)
-                        .font(.system(size: 18 * scalingFactor, weight: .semibold))
-                        .foregroundColor(CMColor.primaryText)
+                    Spacer()
                     
-                    Text(getSubtitleForCategory(category))
-                        .font(.system(size: 15 * scalingFactor, weight: .regular))
-                        .foregroundColor(CMColor.secondaryText)
+                    // Count and chevron
+                    VStack(alignment: .trailing, spacing: 4 * scalingFactor) {
+                        Text(getCountForCategory(category))
+                            .font(.system(size: 28 * scalingFactor, weight: .heavy))
+                            .foregroundColor(.white)
+                            .shadow(radius: 5)
+                        
+                        Spacer() 
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16 * scalingFactor, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
                 }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4 * scalingFactor) {
-                    Text(getCountForCategory(category))
-                        .font(.system(size: 16 * scalingFactor, weight: .semibold))
-                        .foregroundColor(CMColor.primaryText)
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14 * scalingFactor, weight: .medium))
-                        .foregroundColor(CMColor.secondaryText)
-                }
+                .padding(20 * scalingFactor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 120 * scalingFactor)
+                .background(
+                    LinearGradient(
+                        gradient: getGradientForCategory(category),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(24 * scalingFactor)
+                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
-            .padding(.horizontal, 20 * scalingFactor)
-            .padding(.vertical, 16 * scalingFactor)
-            .background(
-                RoundedRectangle(cornerRadius: 16 * scalingFactor)
-                    .fill(CMColor.surface)
-                    .shadow(color: .black.opacity(0.05), radius: 4 * scalingFactor, x: 0, y: 2 * scalingFactor)
-            )
         }
     }
     
@@ -227,6 +232,17 @@ struct AICleanerContactsView: View {
         }
     }
     
+    private func getGradientForCategory(_ category: ContactCategory) -> Gradient {
+        switch category {
+        case .allContacts:
+            return Gradient(colors: [CMColor.primary.opacity(0.9), CMColor.primary.opacity(0.2)])
+        case .duplicates:
+            return Gradient(colors: [CMColor.error.opacity(0.9), CMColor.error.opacity(0.2)])
+        case .incomplete:
+            return Gradient(colors: [CMColor.warning.opacity(0.9), CMColor.warning.opacity(0.2)])
+        }
+    }
+    
     private func isIncompleteContact(_ contact: CNContact) -> Bool {
         let hasName = !contact.givenName.isEmpty || !contact.familyName.isEmpty
         let hasPhone = !contact.phoneNumbers.isEmpty
@@ -242,16 +258,16 @@ struct AICleanerContactsView: View {
             
             VStack(spacing: 16 * scalingFactor) {
                 Image(systemName: "person.2.circle")
-                    .font(.system(size: 64 * scalingFactor))
+                    .font(.system(size: 80 * scalingFactor))
                     .foregroundColor(CMColor.primary)
                 
                 VStack(spacing: 8 * scalingFactor) {
                     Text("Access to Contacts")
-                        .font(.system(size: 24 * scalingFactor, weight: .bold))
+                        .font(.system(size: 28 * scalingFactor, weight: .bold))
                         .foregroundColor(CMColor.primaryText)
                     
                     Text("To find and merge duplicate contacts, we need access to your contacts")
-                        .font(.system(size: 16 * scalingFactor))
+                        .font(.system(size: 18 * scalingFactor))
                         .foregroundColor(CMColor.secondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32 * scalingFactor)
@@ -261,15 +277,15 @@ struct AICleanerContactsView: View {
                     requestContactsPermission()
                 }) {
                     Text(permissionManager.shouldRedirectToSettings ? "Open Settings" : "Allow Access")
-                        .font(.system(size: 17 * scalingFactor, weight: .semibold))
+                        .font(.system(size: 18 * scalingFactor, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 50 * scalingFactor)
+                        .frame(height: 56 * scalingFactor)
                         .background(CMColor.primary)
-                        .cornerRadius(12 * scalingFactor)
+                        .cornerRadius(16 * scalingFactor)
                 }
-                .padding(.horizontal, 32 * scalingFactor)
-                .padding(.top, 16 * scalingFactor)
+                .padding(.horizontal, 48 * scalingFactor)
+                .padding(.top, 24 * scalingFactor)
             }
             
             Spacer()

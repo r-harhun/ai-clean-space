@@ -11,31 +11,68 @@ struct AICleanerIncompleteContactsView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                HStack {
-                    Button("Back") {
-                        dismiss()
+                // Единый хедер, как на экране с дубликатами, но с другим заголовком
+                VStack(spacing: 12) {
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.backward.circle.fill")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(CMColor.primary)
+                                
+                                Text("Go Back")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(CMColor.primary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            // Эта кнопка здесь только для выравнивания, как на вашем экране с дубликатами
+                            // Если в `Incomplete` нет такой кнопки, этот блок можно удалить.
+                            // Я добавил ее, чтобы обеспечить полное сходство.
+                            // Если она не нужна, просто удалите этот блок, это не повлияет на выравнивание
+                            // так как мы используем Spacer().
+                            Task {
+                                // Здесь может быть код для обновления контактов
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(CMColor.primary)
+                                
+                                Text("Refresh")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(CMColor.primary)
+                            }
+                        }
                     }
-                    .foregroundColor(CMColor.primary)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
                     
-                    Spacer()
+                    // Главный заголовок
+                    Text("Incomplete Contacts")
+                        .font(.system(size: 28, weight: .heavy))
+                        .foregroundColor(CMColor.primaryText)
                     
-                    Text("Incomplete")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Button("") { }
-                        .disabled(true)
-                        .opacity(0)
+                    // Описание под заголовком
+                    Text("Contacts that are missing key information.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(CMColor.primaryText.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
+                .padding(.bottom, 24)
+                .background(LinearGradient(gradient: Gradient(colors: [CMColor.background, CMColor.backgroundSecondary]), startPoint: .top, endPoint: .bottom))
                 
+                // Search Bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CMColor.secondaryText)
                     
                     TextField("Name, number, company or email", text: $searchText)
                         .textFieldStyle(PlainTextFieldStyle())
@@ -43,33 +80,35 @@ struct AICleanerIncompleteContactsView: View {
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(CMColor.secondaryText)
                         }
                     }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.systemGray6))
+                .background(CMColor.surface) // Используем CMColor.surface для фона
                 .cornerRadius(10)
                 .padding(.horizontal)
                 .padding(.bottom, 16)
-                
+                .padding(.top, 20)
+
                 if incompleteContacts.isEmpty {
                     Spacer()
                     
                     VStack(spacing: 16) {
-                        Image(systemName: "checkmark.circle")
+                        Image(systemName: "hand.thumbsup.fill")
                             .font(.system(size: 64))
-                            .foregroundColor(.green)
+                            .foregroundColor(CMColor.success)
                         
                         VStack(spacing: 8) {
-                            Text("All Contacts Complete")
+                            Text("All Contacts are Complete")
                                 .font(.title2)
                                 .fontWeight(.bold)
+                                .foregroundColor(CMColor.primaryText)
                             
-                            Text("All your contacts have complete information. Great job keeping your contacts organized!")
+                            Text("All your contacts have complete information. Everything looks great!")
                                 .font(.body)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(CMColor.secondaryText)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
                         }
@@ -82,13 +121,13 @@ struct AICleanerIncompleteContactsView: View {
                             ForEach(Array(filteredIncompleteContacts.enumerated()), id: \.element.identifier) { index, contact in
                                 NavigationLink(destination: AICleanerContactCardPushView(contact: contact)) {
                                     AICleanerIncompleteContactRow(contact: contact)
-                                        .background(Color(.systemBackground))
+                                        .background(CMColor.background)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 if index < filteredIncompleteContacts.count - 1 {
                                     Divider()
-                                        .background(Color(.separator))
+                                        .background(CMColor.border)
                                         .padding(.leading, 16)
                                 }
                             }
@@ -96,7 +135,7 @@ struct AICleanerIncompleteContactsView: View {
                     }
                 }
             }
-            .background(Color(.systemBackground))
+            .background(CMColor.background)
         }
         .navigationBarHidden(true)
         .navigationViewStyle(StackNavigationViewStyle())
