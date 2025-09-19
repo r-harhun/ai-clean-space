@@ -268,7 +268,7 @@ struct AddContactView: View {
 // MARK: - Preview
 #Preview {
     AddContactView(
-        viewModel: AnyContactViewModel(ContactsViewModel()),
+        viewModel: AnyContactViewModel(AICleanerContactsViewModel()),
         contactToEdit: nil
     )
 }

@@ -2,7 +2,7 @@ import SwiftUI
 import ContactsUI
 import Contacts
 
-struct ContactPickerView: UIViewControllerRepresentable {
+struct AICleanerContactPickerView: UIViewControllerRepresentable {
     @Binding var isPresented: Bool
     let onContactsSelected: ([CNContact]) -> Void
     
@@ -27,9 +27,9 @@ struct ContactPickerView: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, CNContactPickerDelegate {
-        let parent: ContactPickerView
+        let parent: AICleanerContactPickerView
         
-        init(_ parent: ContactPickerView) {
+        init(_ parent: AICleanerContactPickerView) {
             self.parent = parent
         }
         

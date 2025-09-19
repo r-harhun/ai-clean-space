@@ -94,7 +94,7 @@ struct MainView: View {
             .fullScreenCover(item: $presentedView) { viewType in
                 switch viewType {
                 case .contacts:
-                    ContactsView()
+                    AICleanerContactsView()
                 case .calendar:
                     CalendarView()
                 case .similarPhotos:

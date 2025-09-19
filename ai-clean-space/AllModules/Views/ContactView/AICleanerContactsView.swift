@@ -3,8 +3,8 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct ContactsView: View {
-    @StateObject private var viewModel = ContactsViewModel()
+struct AICleanerContactsView: View {
+    @StateObject private var viewModel = AICleanerContactsViewModel()
     @StateObject private var permissionManager = ContactsPermissionManager()
     @Environment(\.dismiss) private var dismiss
     
@@ -47,13 +47,13 @@ struct ContactsView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showAllContacts) {
-            AllContactsView(viewModel: viewModel)
+            AICleanerAllContactsView(viewModel: viewModel)
         }
         .fullScreenCover(isPresented: $showDuplicates) {
-            DuplicateContactsView(viewModel: viewModel)
+            AICleanerDuplicateContactsView(viewModel: viewModel)
         }
         .fullScreenCover(isPresented: $showIncomplete) {
-            IncompleteContactsView(viewModel: viewModel)
+            AICleanerIncompleteContactsView(viewModel: viewModel)
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {

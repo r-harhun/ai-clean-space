@@ -3,8 +3,8 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct DuplicateContactsView: View {
-    @ObservedObject var viewModel: ContactsViewModel
+struct AICleanerDuplicateContactsView: View {
+    @ObservedObject var viewModel: AICleanerContactsViewModel
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedDuplicates: Set<String> = []

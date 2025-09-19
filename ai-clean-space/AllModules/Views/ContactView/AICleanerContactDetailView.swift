@@ -2,7 +2,7 @@ import SwiftUI
 import ContactsUI
 import Contacts
 
-struct ContactDetailView: UIViewControllerRepresentable {
+struct AICleanerContactDetailView: UIViewControllerRepresentable {
     let contactData: ContactData
     @Binding var isPresented: Bool
     
@@ -57,9 +57,9 @@ struct ContactDetailView: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, CNContactViewControllerDelegate {
-        let parent: ContactDetailView
+        let parent: AICleanerContactDetailView
         
-        init(_ parent: ContactDetailView) {
+        init(_ parent: AICleanerContactDetailView) {
             self.parent = parent
         }
         
@@ -69,25 +69,6 @@ struct ContactDetailView: UIViewControllerRepresentable {
         
         func contactViewController(_ viewController: CNContactViewController, shouldPerformDefaultActionFor property: CNContactProperty) -> Bool {
             return true
-        }
-    }
-}
-
-struct ContactDetailSheetView: View {
-    let contactData: ContactData
-    @Binding var isPresented: Bool
-    
-    var body: some View {
-        NavigationView {
-            ContactDetailView(contactData: contactData, isPresented: $isPresented)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Готово") {
-                            isPresented = false
-                        }
-                    }
-                }
         }
     }
 }

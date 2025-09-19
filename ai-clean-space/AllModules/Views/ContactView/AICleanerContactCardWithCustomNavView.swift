@@ -3,7 +3,7 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct ContactCardWithCustomNavView: View {
+struct AICleanerContactCardWithCustomNavView: View {
     let contact: CNContact
     @Environment(\.dismiss) private var dismiss
     @State private var isEditing = false

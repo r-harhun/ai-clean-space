@@ -3,7 +3,7 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct SelectableSystemContactRowView: View {
+struct AICleanerSelectableSystemContactRowView: View {
     let contact: CNContact
     let isSelected: Bool
     let isSelectionMode: Bool

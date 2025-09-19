@@ -42,7 +42,7 @@ final class MainViewModel: ObservableObject {
     }
 
     private let mediaCleanerService = MediaCleanerService.shared
-    private let contactsViewModel: ContactsViewModel
+    private let contactsViewModel: AICleanerContactsViewModel
     private let calendarService: CalendarService
 
     private var cancellables = Set<AnyCancellable>()
@@ -55,7 +55,7 @@ final class MainViewModel: ObservableObject {
     
     init() {
         print("SCAN:TEST -  init started")
-        self.contactsViewModel = ContactsViewModel()
+        self.contactsViewModel = AICleanerContactsViewModel()
         self.calendarService = CalendarService()
         print("SCAN:TEST - About to setupBindings")
         setupBindings()

@@ -3,7 +3,7 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct ContactCardPushView: View {
+struct AICleanerContactCardPushView: View {
     let contact: CNContact
     @State private var fullContact: CNContact?
     @State private var isLoading = true
@@ -29,7 +29,7 @@ struct ContactCardPushView: View {
                 }
                 .padding()
             } else if let fullContact = fullContact {
-                ContactCardWithCustomNavView(contact: fullContact)
+                AICleanerContactCardWithCustomNavView(contact: fullContact)
             } else {
                 Text("Contact not found")
                     .foregroundColor(.secondary)

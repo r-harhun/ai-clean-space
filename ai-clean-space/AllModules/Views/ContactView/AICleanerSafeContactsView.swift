@@ -3,7 +3,7 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct SafeContactsView: View {
+struct AICleanerSafeContactsView: View {
     @StateObject private var viewModel = SafeContactsViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
@@ -59,7 +59,7 @@ struct SafeContactsView: View {
         }
 
         .sheet(isPresented: $showContactPicker) {
-            ContactPickerView(isPresented: $showContactPicker) { contacts in
+            AICleanerContactPickerView(isPresented: $showContactPicker) { contacts in
                 contactsToImport = contacts
                 showDeleteFromDeviceAlert = true
             }
@@ -577,5 +577,5 @@ struct SafeContactCardView: UIViewControllerRepresentable {
 
 // MARK: - Preview
 #Preview {
-    SafeContactsView()
+    AICleanerSafeContactsView()
 }

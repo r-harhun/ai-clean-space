@@ -3,7 +3,7 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct IncompleteContactRow: View {
+struct AICleanerIncompleteContactRow: View {
     let contact: CNContact
     
     var body: some View {

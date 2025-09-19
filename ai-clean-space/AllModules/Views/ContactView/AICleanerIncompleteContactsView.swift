@@ -3,8 +3,8 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct IncompleteContactsView: View {
-    @ObservedObject var viewModel: ContactsViewModel
+struct AICleanerIncompleteContactsView: View {
+    @ObservedObject var viewModel: AICleanerContactsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     
@@ -80,8 +80,8 @@ struct IncompleteContactsView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(filteredIncompleteContacts.enumerated()), id: \.element.identifier) { index, contact in
-                                NavigationLink(destination: ContactCardPushView(contact: contact)) {
-                                    IncompleteContactRow(contact: contact)
+                                NavigationLink(destination: AICleanerContactCardPushView(contact: contact)) {
+                                    AICleanerIncompleteContactRow(contact: contact)
                                         .background(Color(.systemBackground))
                                 }
                                 .buttonStyle(PlainButtonStyle())

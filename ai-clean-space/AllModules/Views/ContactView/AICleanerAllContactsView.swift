@@ -3,8 +3,8 @@ import CoreData
 import Contacts
 import ContactsUI
 
-struct AllContactsView: View {
-    @ObservedObject var viewModel: ContactsViewModel
+struct AICleanerAllContactsView: View {
+    @ObservedObject var viewModel: AICleanerContactsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var selectedContacts: Set<String> = []
@@ -138,7 +138,7 @@ struct AllContactsView: View {
                                         if let contactsInSection = groupedContacts[sectionKey] {
                                             ForEach(Array(contactsInSection.enumerated()), id: \.element.identifier) { index, contact in
                                                 if isSelectionMode {
-                                                    SelectableSystemContactRowView(
+                                                    AICleanerSelectableSystemContactRowView(
                                                         contact: contact,
                                                         isSelected: selectedContacts.contains(contact.identifier),
                                                         isSelectionMode: isSelectionMode,
@@ -149,9 +149,9 @@ struct AllContactsView: View {
                                                     )
                                                 } else {
                                                     NavigationLink(
-                                                        destination: ContactCardPushView(contact: contact),
+                                                        destination: AICleanerContactCardPushView(contact: contact),
                                                         label: {
-                                                            SystemContactRowView(contact: contact, scalingFactor: scalingFactor)
+                                                            AICleanerSystemContactRowView(contact: contact, scalingFactor: scalingFactor)
                                                         }
                                                     )
                                                     .buttonStyle(PlainButtonStyle())

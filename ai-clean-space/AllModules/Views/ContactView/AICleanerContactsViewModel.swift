@@ -6,7 +6,7 @@ import CloudKit
 import os.log
 
 @MainActor
-class ContactsViewModel: ObservableObject, ContactViewModelProtocol {
+class AICleanerContactsViewModel: ObservableObject, ContactViewModelProtocol {
     @Published var contacts: [ContactData] = []
     @Published var systemContacts: [CNContact] = []
     @Published var isLoading = false
