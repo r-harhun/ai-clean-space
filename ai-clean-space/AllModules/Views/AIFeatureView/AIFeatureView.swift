@@ -354,7 +354,7 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .screenshots,
-                    title: "Neural-Network Screenshots",
+                    title: "AI-detected Screenshots",
                     image: viewModel.screenshotsPreview,
                     count: viewModel.screenshotsCount,
                     sizeStr: formatMegabytes(viewModel.screenshotsMegabytes),

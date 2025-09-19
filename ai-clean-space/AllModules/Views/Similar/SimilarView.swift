@@ -40,7 +40,6 @@ struct SimilarView: View {
                     contentView
                 }
                 
-                // Merge Button
                 if totalSelectedCount > 0 {
                     Button(action: {
                         mergeSelectedPhotos()
@@ -140,7 +139,6 @@ struct SimilarView: View {
             LazyVStack(spacing: 24) {
                 ForEach(photoGroups) { group in
                     VStack(alignment: .leading, spacing: 12) {
-                        // Group Header
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(group.title)
@@ -160,12 +158,10 @@ struct SimilarView: View {
                             .foregroundColor(CMColor.primary)
                         }
 
-                        // Photo Grid - точно как на картинке
                         let bestPhoto = group.photos.first(where: { $0.isBest })
                         let otherPhotos = group.photos.filter { !$0.isBest }
 
                         HStack(alignment: .top, spacing: 8) {
-                            // Большое изображение слева (Best)
                             if let bestPhoto = bestPhoto {
                                 PhotoAssetItemView(
                                     photo: bestPhoto,
@@ -176,7 +172,6 @@ struct SimilarView: View {
                                 .frame(width: 160, height: 160)
                             }
 
-                            // Сетка маленьких изображений справа
                             if !otherPhotos.isEmpty {
                                 VStack(spacing: 8) {
                                     let rows = otherPhotos.chunked(into: 2)
@@ -192,7 +187,6 @@ struct SimilarView: View {
                                                 .frame(width: 76, height: 76)
                                             }
                                             
-                                            // Заполняем пустое место если нужно
                                             if rowPhotos.count == 1 {
                                                 Spacer()
                                                     .frame(width: 76, height: 76)
@@ -200,7 +194,6 @@ struct SimilarView: View {
                                         }
                                     }
                                     
-                                    // Заполняем пустые строки если нужно
                                     let maxRows = 2
                                     let currentRows = rows.count
                                     if currentRows < maxRows {
@@ -224,8 +217,6 @@ struct SimilarView: View {
         }
         .background(CMColor.background)
     }
-
-    // MARK: - Helper Functions
     
     private func requestPhotoPermissionAndLoadPhotos() {
         guard !hasRequestedPermission else { return }
@@ -292,9 +283,8 @@ struct SimilarView: View {
     }
     
     private func mergeSelectedPhotos() {
-        // Логика объединения похожих фотографий - удаляем дубликаты, оставляем лучшие
         let selectedAssets = photoGroups.flatMap { $0.photos }
-            .filter { selectedPhotos.contains($0.id) && !$0.isBest } // Удаляем только не-лучшие
+            .filter { selectedPhotos.contains($0.id) && !$0.isBest }
             .map { $0.asset }
         
         guard !selectedAssets.isEmpty else {
@@ -308,7 +298,6 @@ struct SimilarView: View {
             DispatchQueue.main.async {
                 if success {
                     self.selectedPhotos.removeAll()
-                    // Перезагружаем данные
                     self.loadPhotos()
                 } else if let error = error {
                     print("Error merging photos: \(error)")
