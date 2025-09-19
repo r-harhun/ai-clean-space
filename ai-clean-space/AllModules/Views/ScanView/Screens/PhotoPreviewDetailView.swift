@@ -2,7 +2,7 @@ import SwiftUI
 import Photos
 
 struct SimilarityPhotoDetailView: View {
-    let section: MediaCleanerServiceSection
+    let section: AICleanServiceSection
     let initialIndex: Int
     @ObservedObject var viewModel: SimilaritySectionsViewModel
     @Environment(\.dismiss) private var dismiss
@@ -10,7 +10,7 @@ struct SimilarityPhotoDetailView: View {
     @State private var selectedIndex: Int
     @State private var dragOffset: CGFloat = 0
     
-    init(section: MediaCleanerServiceSection, initialIndex: Int, viewModel: SimilaritySectionsViewModel) {
+    init(section: AICleanServiceSection, initialIndex: Int, viewModel: SimilaritySectionsViewModel) {
         self.section = section
         self.initialIndex = initialIndex
         self.viewModel = viewModel

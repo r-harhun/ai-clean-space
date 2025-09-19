@@ -3,7 +3,7 @@ import Photos
 import Combine
 
 final class SimilaritySectionsViewModel: ObservableObject {
-    @Published var sections: [MediaCleanerServiceSection]
+    @Published var sections: [AICleanServiceSection]
     @Published var selectedItems: Set<String> = []
     @Published var isSelectionMode: Bool = false
 
@@ -21,12 +21,12 @@ final class SimilaritySectionsViewModel: ObservableObject {
         return selectedItems.count
     }
 
-    init(sections: [MediaCleanerServiceSection], type: ScanItemType) {
+    init(sections: [AICleanServiceSection], type: ScanItemType) {
         self.sections = sections
         self.type = type
     }
     
-    func toggleSelection(for model: MediaCleanerServiceModel) {
+    func toggleSelection(for model: AICleanServiceModel) {
         let itemId = model.asset.localIdentifier
         if selectedItems.contains(itemId) {
             selectedItems.remove(itemId)
@@ -40,7 +40,7 @@ final class SimilaritySectionsViewModel: ObservableObject {
         }
     }
     
-    func isSelected(_ model: MediaCleanerServiceModel) -> Bool {
+    func isSelected(_ model: AICleanServiceModel) -> Bool {
         return selectedItems.contains(model.asset.localIdentifier)
     }
     
@@ -59,14 +59,14 @@ final class SimilaritySectionsViewModel: ObservableObject {
         isSelectionMode = false
     }
     
-    func selectAllInSection(_ section: MediaCleanerServiceSection) {
+    func selectAllInSection(_ section: AICleanServiceSection) {
         for model in section.models {
             selectedItems.insert(model.asset.localIdentifier)
         }
         isSelectionMode = true
     }
     
-    func deselectAllInSection(_ section: MediaCleanerServiceSection) {
+    func deselectAllInSection(_ section: AICleanServiceSection) {
         for model in section.models {
             selectedItems.remove(model.asset.localIdentifier)
         }
@@ -77,7 +77,7 @@ final class SimilaritySectionsViewModel: ObservableObject {
         }
     }
     
-    func isAllSelectedInSection(_ section: MediaCleanerServiceSection) -> Bool {
+    func isAllSelectedInSection(_ section: AICleanServiceSection) -> Bool {
         return section.models.allSatisfy { model in
             selectedItems.contains(model.asset.localIdentifier)
         }

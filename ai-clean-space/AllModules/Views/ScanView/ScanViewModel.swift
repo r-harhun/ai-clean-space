@@ -7,15 +7,15 @@ final class MainViewModel: ObservableObject {
     @Published var subtitle = ""
     @Published var progress = Double.zero
 
-    @Published var previews = MediaCleanerServicePreviews(
+    @Published var previews = AICleanServicePreviews(
         _similar: nil,
         _duplicates: nil,
         _blurred: nil,
         _screenshots: nil,
         _videos: nil
     )
-    @Published var counts = MediaCleanerServiceCounts<Int>()
-    @Published var megabytes = MediaCleanerServiceCounts<Double>()
+    @Published var counts = AICleanServiceCounts<Int>()
+    @Published var megabytes = AICleanServiceCounts<Double>()
     
     // Добавляем поддержку контактов и календаря
     @Published var contactsCount: Int = 0
@@ -382,7 +382,7 @@ final class MainViewModel: ObservableObject {
         }
     }
     
-    func getSections(for type: MediaCleanerServiceType) -> [MediaCleanerServiceSection] {
+    func getSections(for type: AICleanServiceType) -> [AICleanServiceSection] {
         return mediaCleanerService.getMedia(type)
     }
 

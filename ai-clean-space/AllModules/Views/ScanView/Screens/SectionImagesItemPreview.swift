@@ -2,12 +2,12 @@ import SwiftUI
 import Photos
 
 struct SectionImagesItemPreview: View {
-    let section: MediaCleanerServiceSection
+    let section: AICleanServiceSection
     @State private var selectedIndex: Int
     @ObservedObject var viewModel: SimilaritySectionsViewModel
     @Environment(\.dismiss) private var dismiss
     
-    init(section: MediaCleanerServiceSection, initialIndex: Int, viewModel: SimilaritySectionsViewModel) {
+    init(section: AICleanServiceSection, initialIndex: Int, viewModel: SimilaritySectionsViewModel) {
         self.section = section
         self._selectedIndex = State(initialValue: initialIndex)
         self.viewModel = viewModel
@@ -172,7 +172,7 @@ struct SectionImagesItemPreview: View {
 struct SectionImagesItemPreview_Previews: PreviewProvider {
     static var previews: some View {
         // Mock data for preview
-        let mockSection = MediaCleanerServiceSection(
+        let mockSection = AICleanServiceSection(
             kind: .count,
             models: [] // В реальном приложении здесь будут модели
         )

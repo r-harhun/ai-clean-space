@@ -4,7 +4,7 @@ import Photos
 struct SimilaritySectionsView: View {
     @StateObject private var viewModel: SimilaritySectionsViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedSection: MediaCleanerServiceSection?
+    @State private var selectedSection: AICleanServiceSection?
     @State private var selectedImageIndex: Int = 0
 
     init(viewModel: SimilaritySectionsViewModel) {
@@ -114,7 +114,7 @@ struct SimilaritySectionsView: View {
         }
     }
 
-    private func getSectionView(for section: MediaCleanerServiceSection) -> some View {
+    private func getSectionView(for section: AICleanServiceSection) -> some View {
         LazyVStack(spacing: 12) {
             HStack(alignment: .center) {
                 switch section.kind {
@@ -166,7 +166,7 @@ struct SimilaritySectionsView: View {
         }
     }
 
-    private func getMainItemView(for section: MediaCleanerServiceSection) -> some View {
+    private func getMainItemView(for section: AICleanServiceSection) -> some View {
         VStack {
             if let firstModel = section.models.first {
                 Button {
@@ -253,7 +253,7 @@ struct SimilaritySectionsView: View {
         .animation(.easeInOut(duration: 0.2), value: section.models.first.map { viewModel.isSelected($0) } ?? false)
     }
 
-    private func getItemView(for model: MediaCleanerServiceModel, section: MediaCleanerServiceSection, index: Int) -> some View {
+    private func getItemView(for model: AICleanServiceModel, section: AICleanServiceSection, index: Int) -> some View {
         // Учитываем: padding контейнера (12*2) + отступы между элементами (8*3) + запас
         let itemSize = (UIScreen.main.bounds.width - 24 - 24 - 16) / 4
 

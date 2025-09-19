@@ -36,7 +36,7 @@ enum PhotoSwipeDecision: String, CaseIterable {
 }
 
 struct SwipePhotoDetailView: View {
-    let sections: [MediaCleanerServiceSection]
+    let sections: [AICleanServiceSection]
     @State private var selectedIndex: Int
     @ObservedObject var viewModel: SimilaritySectionsViewModel
     @Environment(\.dismiss) private var dismiss
@@ -46,7 +46,7 @@ struct SwipePhotoDetailView: View {
     var onShowResults: (() -> Void)? // Callback для открытия SwipeResults
     
     // Cache service для сохранения swipe решений
-    private let cacheService: MediaCleanerCacheService = MediaCleanerCacheServiceImpl.shared
+    private let cacheService = AICleanCacheService.shared
     
     // Swipe state
     @State private var dragOffset: CGFloat = 0
@@ -63,7 +63,7 @@ struct SwipePhotoDetailView: View {
     private let swipeThreshold: CGFloat = 100
     
     // Combined models from all sections
-    private var allModels: [MediaCleanerServiceModel] {
+    private var allModels: [AICleanServiceModel] {
         return sections.flatMap { $0.models }
     }
     
@@ -72,14 +72,12 @@ struct SwipePhotoDetailView: View {
         return cacheService.getTotalSwipeDecisionsForDeletion()
     }
     
-
-    
     // New closure to handle completion
     var onFinish: ([String: PhotoSwipeDecision]) -> Void
     // Callback для обновления данных после каждого свайпа
     var onSwipeDecisionChanged: (() -> Void)?
     
-    init(sections: [MediaCleanerServiceSection], initialIndex: Int, viewModel: SimilaritySectionsViewModel, mode: SwipePhotoDetailMode = .swipeMode, onFinish: @escaping ([String: PhotoSwipeDecision]) -> Void, onShowResults: (() -> Void)? = nil, onSwipeDecisionChanged: (() -> Void)? = nil) {
+    init(sections: [AICleanServiceSection], initialIndex: Int, viewModel: SimilaritySectionsViewModel, mode: SwipePhotoDetailMode = .swipeMode, onFinish: @escaping ([String: PhotoSwipeDecision]) -> Void, onShowResults: (() -> Void)? = nil, onSwipeDecisionChanged: (() -> Void)? = nil) {
         self.sections = sections
         self._selectedIndex = State(initialValue: initialIndex)
         self.viewModel = viewModel
@@ -90,31 +88,22 @@ struct SwipePhotoDetailView: View {
         print("SWIPE:TEST - SwipePhotoDetailView init: initialIndex=\(initialIndex), totalModels=\(sections.flatMap { $0.models }.count), mode=\(mode)")
     }
     
-    // MARK: - Cache Helper Methods
-    
-    /// Конвертирует PhotoSwipeDecision в Bool для MediaCleanerCacheService
-    /// - Parameter decision: PhotoSwipeDecision (.keep, .delete, .none)
-    /// - Returns: Bool? где true = ignored (keep), false = selected for deletion, nil = no decision
     private func decisionToCacheValue(_ decision: PhotoSwipeDecision) -> Bool? {
         switch decision {
         case .keep:
-            return true    // ignored = true (keep the photo)
+            return true
         case .delete:
-            return false   // ignored = false (selected for smart cleaning/deletion)
+            return false
         case .none:
-            return nil     // no decision
+            return nil
         }
     }
     
-    /// Конвертирует Bool из MediaCleanerCacheService в PhotoSwipeDecision
-    /// - Parameter cacheValue: Bool? где true = ignored, false = selected for deletion, nil = no decision
-    /// - Returns: PhotoSwipeDecision
     private func cacheValueToDecision(_ cacheValue: Bool?) -> PhotoSwipeDecision {
         guard let cacheValue = cacheValue else { return .none }
         return cacheValue ? .keep : .delete
     }
     
-    /// Загружает сохраненные swipe решения для всех фото
     private func loadSavedSwipeDecisions() {
         print("SWIPE:CACHE - Loading saved swipe decisions for \(allModels.count) photos")
         
@@ -132,10 +121,6 @@ struct SwipePhotoDetailView: View {
         print("SWIPE:CACHE - Loaded \(photoDecisions.count) saved swipe decisions")
     }
     
-    /// Сохраняет swipe решение в кеш
-    /// - Parameters:
-    ///   - assetId: Идентификатор фото
-    ///   - decision: Принятое решение
     private func saveSwipeDecision(for assetId: String, decision: PhotoSwipeDecision) {
         print("SWIPE:CACHE - Saving swipe decision for \(assetId): \(decision)")
         print("UPDATE:COUNT:TEST - saveSwipeDecision called for \(assetId): \(decision)")

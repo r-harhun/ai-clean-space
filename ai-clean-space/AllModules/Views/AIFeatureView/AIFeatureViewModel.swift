@@ -39,7 +39,7 @@ class AIFeatureViewModel: ObservableObject {
     }
     
     private let mediaCleanerService = MediaCleanerService.shared
-    private let cacheService: MediaCleanerCacheService = MediaCleanerCacheServiceImpl.shared
+    private let cacheService = AICleanCacheService.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
@@ -50,7 +50,7 @@ class AIFeatureViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
-    func getSections(for type: MediaCleanerServiceType) -> [MediaCleanerServiceSection] {
+    func getSections(for type: AICleanServiceType) -> [AICleanServiceSection] {
         return mediaCleanerService.getMedia(type)
     }
     
@@ -138,7 +138,7 @@ class AIFeatureViewModel: ObservableObject {
         }
     }
     
-    func getSectionsForAssetIdentifiers(_ assetIdentifiers: [String]) -> [MediaCleanerServiceSection] {
+    func getSectionsForAssetIdentifiers(_ assetIdentifiers: [String]) -> [AICleanServiceSection] {
         let identifierSet = Set(assetIdentifiers)
         let allSections = [
             getSections(for: .image(.similar)),
@@ -147,14 +147,14 @@ class AIFeatureViewModel: ObservableObject {
             getSections(for: .image(.screenshots))
         ].flatMap { $0 }
         
-        let filteredSections = allSections.compactMap { section -> MediaCleanerServiceSection? in
+        let filteredSections = allSections.compactMap { section -> AICleanServiceSection? in
             let filteredModels = section.models.filter { model in
                 identifierSet.contains(model.asset.localIdentifier)
             }
             
             guard !filteredModels.isEmpty else { return nil }
             
-            return MediaCleanerServiceSection(
+            return AICleanServiceSection(
                 kind: section.kind,
                 models: filteredModels
             )

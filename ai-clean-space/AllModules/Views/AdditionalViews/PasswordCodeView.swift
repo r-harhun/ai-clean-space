@@ -3,17 +3,17 @@ import LocalAuthentication
 import UIKit
 
 struct PINView: View {
-    @State private var enteredCode: String = ""
-    @State private var pinSetupState: PinSetupState = .entry
-    @State private var storedPin: String = ""
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
-    @State private var biometricType: LABiometryType = .none
-    @State private var isBiometricAvailable: Bool = false
+    @State private var inputCode: String = ""
+    @State private var codeFlowState: PinSetupState = .entry
+    @State private var tempCode: String = ""
+    @State private var displayError: Bool = false
+    @State private var validationMessage: String = ""
+    @State private var biometricAuthType: LABiometryType = .none
+    @State private var isBiometricPromptAvailable: Bool = false
     @Environment(\.dismiss) private var dismiss
     
     // MARK: - New State for Change Passcode Flow
-    @State private var changePasscodeState: ChangePasscodeFlowState = .verifyingOldPin
+    @State private var changePasscodeFlow: ChangePasscodeFlowState = .verifyingOldPin
     
     let requiredLength: Int = 4
     let onTabBarVisibilityChange: (Bool) -> Void
@@ -81,7 +81,7 @@ struct PINView: View {
                     
                     Spacer()
                     
-                    Text(titleText)
+                    Text(headerTitle)
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(CMColor.primaryText)
                     
@@ -102,7 +102,7 @@ struct PINView: View {
                 .padding(.top, 50 * scalingFactor)
                 
                 // MARK: - Description Text
-                Text(descriptionText)
+                Text(screenDescription)
                     .font(.system(size: 16, weight: .regular))
                     .foregroundColor(CMColor.secondaryText)
                     .multilineTextAlignment(.center)
@@ -123,15 +123,15 @@ struct PINView: View {
                                     Circle()
                                         .fill(dotColor(for: index))
                                         .frame(width: 16 * scalingFactor, height: 16 * scalingFactor)
-                                        .scaleEffect(index < enteredCode.count ? 1.0 : 0.0)
-                                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: enteredCode.count)
+                                        .scaleEffect(index < inputCode.count ? 1.0 : 0.0)
+                                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: inputCode.count)
                                 )
-                                .animation(.easeInOut(duration: 0.2), value: showError)
+                                .animation(.easeInOut(duration: 0.2), value: displayError)
                         }
                     }
                     
-                    if showError {
-                        Text(errorMessage)
+                    if displayError {
+                        Text(validationMessage)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(CMColor.error)
                             .multilineTextAlignment(.center)
@@ -151,14 +151,14 @@ struct PINView: View {
                                 let number = row * 3 + column
                                 KeyboardButton(
                                     text: "\(number)",
-                                    action: { addDigit("\(number)") }
+                                    action: { appendDigit("\(number)") }
                                 )
                             }
                         }
                     }
                     
                     HStack(spacing: 36 * scalingFactor) {
-                        if shouldShowBiometricButton {
+                        if shouldShowBiometricPrompt {
                             Button(action: {
                                 authenticateWithBiometrics()
                             }) {
@@ -176,18 +176,18 @@ struct PINView: View {
                         
                         KeyboardButton(
                             text: "0",
-                            action: { addDigit("0") }
+                            action: { appendDigit("0") }
                         )
                         
-                        Button(action: deleteDigit) {
+                        Button(action: removeDigit) {
                             Image(systemName: "delete.backward.fill")
                                 .font(.system(size: 24 * scalingFactor, weight: .regular))
                                 .foregroundColor(CMColor.primaryText)
                                 .frame(width: 72 * scalingFactor, height: 72 * scalingFactor)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .opacity(enteredCode.isEmpty ? 0.3 : 1.0)
-                        .disabled(enteredCode.isEmpty)
+                        .opacity(inputCode.isEmpty ? 0.3 : 1.0)
+                        .disabled(inputCode.isEmpty)
                     }
                 }
                 .padding(.bottom, 64 * scalingFactor)
@@ -195,7 +195,8 @@ struct PINView: View {
             }
         }
         .onAppear {
-            checkPinStatus()
+            determineCodeState()
+            checkBiometricAvailability()
             onTabBarVisibilityChange(false)
         }
         .onDisappear {
@@ -204,9 +205,9 @@ struct PINView: View {
     }
     
     // MARK: - Helper Properties
-    private var titleText: String {
+    private var headerTitle: String {
         if isChangingPasscode {
-            switch changePasscodeState {
+            switch changePasscodeFlow {
             case .verifyingOldPin:
                 return "Change Password"
             case .settingNewPin:
@@ -215,7 +216,7 @@ struct PINView: View {
                 return "Confirm New PIN"
             }
         } else {
-            switch pinSetupState {
+            switch codeFlowState {
             case .setup:
                 return "Create Password"
             case .entry:
@@ -226,9 +227,9 @@ struct PINView: View {
         }
     }
     
-    private var descriptionText: String {
+    private var screenDescription: String {
         if isChangingPasscode {
-            switch changePasscodeState {
+            switch changePasscodeFlow {
             case .verifyingOldPin:
                 return "Enter your current PIN to continue"
             case .settingNewPin:
@@ -237,7 +238,7 @@ struct PINView: View {
                 return "Confirm your new PIN"
             }
         } else {
-            switch pinSetupState {
+            switch codeFlowState {
             case .setup:
                 return "Create a 4-digit PIN to secure your safe storage"
             case .entry:
@@ -248,14 +249,14 @@ struct PINView: View {
         }
     }
     
-    private var shouldShowBiometricButton: Bool {
-        return isBiometricAvailable &&
-               pinSetupState == .entry &&
-               !isChangingPasscode
+    private var shouldShowBiometricPrompt: Bool {
+        return isBiometricPromptAvailable &&
+                codeFlowState == .entry &&
+                !isChangingPasscode
     }
     
     private var biometricIconName: String {
-        switch biometricType {
+        switch biometricAuthType {
         case .faceID:
             return "faceid"
         case .touchID:
@@ -269,52 +270,52 @@ struct PINView: View {
     
     // MARK: - Helper Methods
     private func dotColor(for index: Int) -> Color {
-        if showError {
+        if displayError {
             return CMColor.error
-        } else if index < enteredCode.count {
+        } else if index < inputCode.count {
             return CMColor.activeButton
         } else {
             return CMColor.secondaryText.opacity(0.3)
         }
     }
     
-    private func clearError() {
-        if showError {
+    private func hideError() {
+        if displayError {
             withAnimation(.easeInOut(duration: 0.3)) {
-                showError = false
-                errorMessage = ""
+                displayError = false
+                validationMessage = ""
             }
         }
     }
     
-    private func showErrorState(message: String) {
-        errorMessage = message
+    private func displayErrorState(message: String) {
+        validationMessage = message
         withAnimation(.easeInOut(duration: 0.3)) {
-            showError = true
+            displayError = true
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            clearError()
+            hideError()
         }
     }
     
-    private func addDigit(_ digit: String) {
-        guard enteredCode.count < requiredLength else { return }
+    private func appendDigit(_ digit: String) {
+        guard inputCode.count < requiredLength else { return }
         
-        clearError()
-        enteredCode += digit
+        hideError()
+        inputCode += digit
         
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        if enteredCode.count == requiredLength {
+        if inputCode.count == requiredLength {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                handleCompleteCode()
+                handleCompletedCode()
             }
         }
     }
     
-    private func handleCompleteCode() {
+    private func handleCompletedCode() {
         if isChangingPasscode {
             handlePasscodeChangeFlow()
         } else {
@@ -323,16 +324,16 @@ struct PINView: View {
     }
     
     private func handlePinSetupFlow() {
-        switch pinSetupState {
+        switch codeFlowState {
         case .setup:
-            storedPin = enteredCode
-            pinSetupState = .confirm
-            enteredCode = ""
+            tempCode = inputCode
+            codeFlowState = .confirm
+            inputCode = ""
             
         case .confirm:
-            if enteredCode == storedPin {
-                UserDefaults.standard.set(enteredCode, forKey: "safe_storage_pin")
-                onCodeEntered(enteredCode)
+            if inputCode == tempCode {
+                UserDefaults.standard.set(inputCode, forKey: "safe_storage_pin")
+                onCodeEntered(inputCode)
                 
                 if shouldAutoDismiss {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -340,10 +341,10 @@ struct PINView: View {
                     }
                 }
             } else {
-                showErrorState(message: "PINs don't match. Please try again.")
-                enteredCode = ""
-                storedPin = ""
-                pinSetupState = .setup
+                displayErrorState(message: "PINs don't match. Please try again.")
+                inputCode = ""
+                tempCode = ""
+                codeFlowState = .setup
                 
                 let errorFeedback = UINotificationFeedbackGenerator()
                 errorFeedback.notificationOccurred(.error)
@@ -351,8 +352,8 @@ struct PINView: View {
             
         case .entry:
             let savedPin = UserDefaults.standard.string(forKey: "safe_storage_pin") ?? ""
-            if enteredCode == savedPin {
-                onCodeEntered(enteredCode)
+            if inputCode == savedPin {
+                onCodeEntered(inputCode)
                 
                 if shouldAutoDismiss {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -360,8 +361,8 @@ struct PINView: View {
                     }
                 }
             } else {
-                showErrorState(message: "Incorrect PIN. Please try again.")
-                enteredCode = ""
+                displayErrorState(message: "Incorrect PIN. Please try again.")
+                inputCode = ""
                 
                 let errorFeedback = UINotificationFeedbackGenerator()
                 errorFeedback.notificationOccurred(.error)
@@ -370,42 +371,42 @@ struct PINView: View {
     }
     
     private func handlePasscodeChangeFlow() {
-        switch changePasscodeState {
+        switch changePasscodeFlow {
         case .verifyingOldPin:
             let savedPin = UserDefaults.standard.string(forKey: "safe_storage_pin") ?? ""
-            if enteredCode == savedPin {
-                enteredCode = ""
+            if inputCode == savedPin {
+                inputCode = ""
                 withAnimation {
-                    changePasscodeState = .settingNewPin
+                    changePasscodeFlow = .settingNewPin
                 }
             } else {
-                showErrorState(message: "Incorrect PIN. Please try again.")
-                enteredCode = ""
+                displayErrorState(message: "Incorrect PIN. Please try again.")
+                inputCode = ""
                 let errorFeedback = UINotificationFeedbackGenerator()
                 errorFeedback.notificationOccurred(.error)
             }
             
         case .settingNewPin:
-            storedPin = enteredCode
-            enteredCode = ""
+            tempCode = inputCode
+            inputCode = ""
             withAnimation {
-                changePasscodeState = .confirmingNewPin
+                changePasscodeFlow = .confirmingNewPin
             }
             
         case .confirmingNewPin:
-            if enteredCode == storedPin {
-                UserDefaults.standard.set(enteredCode, forKey: "safe_storage_pin")
-                onCodeEntered(enteredCode)
+            if inputCode == tempCode {
+                UserDefaults.standard.set(inputCode, forKey: "safe_storage_pin")
+                onCodeEntered(inputCode)
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     dismiss()
                 }
             } else {
-                showErrorState(message: "PINs don't match. Please try again.")
-                enteredCode = ""
-                storedPin = ""
+                displayErrorState(message: "PINs don't match. Please try again.")
+                inputCode = ""
+                tempCode = ""
                 withAnimation {
-                    changePasscodeState = .settingNewPin
+                    changePasscodeFlow = .settingNewPin
                 }
                 let errorFeedback = UINotificationFeedbackGenerator()
                 errorFeedback.notificationOccurred(.error)
@@ -413,13 +414,13 @@ struct PINView: View {
         }
     }
     
-    private func checkPinStatus() {
+    private func determineCodeState() {
         if !isChangingPasscode {
             let savedPin = UserDefaults.standard.string(forKey: "safe_storage_pin")
             if savedPin == nil || savedPin?.isEmpty == true {
-                pinSetupState = .setup
+                codeFlowState = .setup
             } else {
-                pinSetupState = .entry
+                codeFlowState = .entry
             }
         }
         
@@ -432,16 +433,16 @@ struct PINView: View {
         var error: NSError?
         
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            isBiometricAvailable = true
-            biometricType = context.biometryType
+            isBiometricPromptAvailable = true
+            biometricAuthType = context.biometryType
         } else {
-            isBiometricAvailable = false
-            biometricType = .none
+            isBiometricPromptAvailable = false
+            biometricAuthType = .none
         }
     }
     
     private func authenticateWithBiometrics() {
-        guard isBiometricAvailable else { return }
+        guard isBiometricPromptAvailable else { return }
         
         let context = LAContext()
         let reason = "Use biometrics to access your secure storage."
@@ -482,14 +483,14 @@ struct PINView: View {
             message = "Biometric authentication error."
         }
         
-        showErrorState(message: message)
+        displayErrorState(message: message)
     }
     
-    private func deleteDigit() {
-        guard !enteredCode.isEmpty else { return }
+    private func removeDigit() {
+        guard !inputCode.isEmpty else { return }
         
-        clearError()
-        enteredCode.removeLast()
+        hideError()
+        inputCode.removeLast()
         
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()

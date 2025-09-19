@@ -10,7 +10,7 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
             photoLibrary: PHPhotoLibrary.shared(),
             imageProcessor: ImageProcessorImpl(),
             imageManager: CachingImageManager(),
-            cacheService: MediaCleanerCacheServiceImpl.shared
+            cacheService: AICleanCacheService.shared
         )
         print("SCAN:TEST - MediaCleanerService.shared instance created")
         return instance
@@ -27,37 +27,37 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     private var imagesFetchResult: PHFetchResult<PHAsset>?
     private var videoFetchRsult: PHFetchResult<PHAsset>?
 
-    private var similar: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var similar: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: similar.count, for: .image(.similar))
         print("SCAN:TEST - Sending counts update: similar=\(similar.count), total=\(counts.total)")
         countsSubject.send(counts)
     }}
-    private var duplicates: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var duplicates: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: duplicates.count, for: .image(.duplicates))
         print("SCAN:TEST - Sending counts update: duplicates=\(duplicates.count), total=\(counts.total)")
         countsSubject.send(counts)
     }}
-    private var blurred: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var blurred: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: blurred.count, for: .image(.blurred))
         print("SCAN:TEST - Sending counts update: blurred=\(blurred.count), total=\(counts.total)")
         countsSubject.send(counts)
     }}
-    private var screenshots: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var screenshots: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: screenshots.count, for: .image(.screenshots))
         print("SCAN:TEST - Sending counts update: screenshots=\(screenshots.count), total=\(counts.total)")
         countsSubject.send(counts)
     }}
-    private var videos: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var videos: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: videos.count, for: .video)
         print("SCAN:TEST - Sending counts update: videos=\(videos.count), total=\(counts.total)")
         countsSubject.send(counts)
     }}
-    private var audios: Set<MediaCleanerServiceModel> = [] { didSet {
+    private var audios: Set<AICleanServiceModel> = [] { didSet {
         counts.set(count: audios.count, for: .audio)
         countsSubject.send(counts)
     }}
 
-    private let _imageProgress = MediaCleanerServiceProgress.startImages
+    private let _imageProgress = AICleanServiceProgress.startImages
 
     private let _similarPreview = CurrentValueSubject<UIImage?, Never>(nil)
     private let _blurredPreview = CurrentValueSubject<UIImage?, Never>(nil)
@@ -66,42 +66,42 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     private let _videosPreview = CurrentValueSubject<UIImage?, Never>(nil)
 
     private let imageProcessor: ImageProcessor
-    private let cacheService: MediaCleanerCacheService
+    private let cacheService: AICleanCacheService
 
     
-    private let progressSubject = CurrentValueSubject<MediaCleanerServiceProgress, Never>(
-        MediaCleanerServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false)
+    private let progressSubject = CurrentValueSubject<AICleanServiceProgress, Never>(
+        AICleanServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false)
     )
-    private let countsSubject = CurrentValueSubject<MediaCleanerServiceCounts<Int>, Never>(
-        MediaCleanerServiceCounts<Int>()
+    private let countsSubject = CurrentValueSubject<AICleanServiceCounts<Int>, Never>(
+        AICleanServiceCounts<Int>()
     )
-    private let megabytesSubject = CurrentValueSubject<MediaCleanerServiceCounts<Double>, Never>(
-        MediaCleanerServiceCounts<Double>()
+    private let megabytesSubject = CurrentValueSubject<AICleanServiceCounts<Double>, Never>(
+        AICleanServiceCounts<Double>()
     )
-    private let previewsSubject = CurrentValueSubject<MediaCleanerServicePreviews, Never>(
-        MediaCleanerServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil)
+    private let previewsSubject = CurrentValueSubject<AICleanServicePreviews, Never>(
+        AICleanServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil)
     )
-    private let mediaWasDeletedSubject = CurrentValueSubject<MediaCleanerServiceType, Never>(
-        MediaCleanerServiceType.image(.similar)
+    private let mediaWasDeletedSubject = CurrentValueSubject<AICleanServiceType, Never>(
+        AICleanServiceType.image(.similar)
     )
     
-    var progressPublisher: AnyPublisher<MediaCleanerServiceProgress, Never> {
+    var progressPublisher: AnyPublisher<AICleanServiceProgress, Never> {
         print("SCAN:TEST - progressPublisher accessed, current value: \(progressSubject.value.value)")
         return progressSubject.eraseToAnyPublisher()
     }
-    var countsPublisher: AnyPublisher<MediaCleanerServiceCounts<Int>, Never> {
+    var countsPublisher: AnyPublisher<AICleanServiceCounts<Int>, Never> {
         print("SCAN:TEST - countsPublisher accessed, current total: \(countsSubject.value.total)")
         return countsSubject.eraseToAnyPublisher()
     }
-    var megabytesPublisher: AnyPublisher<MediaCleanerServiceCounts<Double>, Never> {
+    var megabytesPublisher: AnyPublisher<AICleanServiceCounts<Double>, Never> {
         print("SCAN:TEST - megabytesPublisher accessed, current total: \(megabytesSubject.value.total)")
         return megabytesSubject.eraseToAnyPublisher()
     }
-    var previewsPublisher: AnyPublisher<MediaCleanerServicePreviews, Never> {
+    var previewsPublisher: AnyPublisher<AICleanServicePreviews, Never> {
         print("SCAN:TEST - previewsPublisher accessed")
         return previewsSubject.eraseToAnyPublisher()
     }
-    var mediaWasDeletedPublisher: AnyPublisher<MediaCleanerServiceType, Never> {
+    var mediaWasDeletedPublisher: AnyPublisher<AICleanServiceType, Never> {
         mediaWasDeletedSubject.eraseToAnyPublisher()
     }
     
@@ -121,17 +121,17 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         _videosPreview.eraseToAnyPublisher()
     }
     
-    var progress: MediaCleanerServiceProgress { progressSubject.value }
-    var counts: MediaCleanerServiceCounts<Int> { countsSubject.value }
-    var megabytes: MediaCleanerServiceCounts<Double> { megabytesSubject.value }
-    var previews: MediaCleanerServicePreviews { previewsSubject.value }
-    var mediaWasDeleted: MediaCleanerServiceType { mediaWasDeletedSubject.value }
+    var progress: AICleanServiceProgress { progressSubject.value }
+    var counts: AICleanServiceCounts<Int> { countsSubject.value }
+    var megabytes: AICleanServiceCounts<Double> { megabytesSubject.value }
+    var previews: AICleanServicePreviews { previewsSubject.value }
+    var mediaWasDeleted: AICleanServiceType { mediaWasDeletedSubject.value }
     
     init(
         photoLibrary: PHPhotoLibrary,
         imageProcessor: ImageProcessor,
         imageManager: CachingImageManager,
-        cacheService: MediaCleanerCacheService
+        cacheService: AICleanCacheService
     ) {
         print("SCAN:TEST - MediaCleanerService init started")
         self.photoLibrary = photoLibrary
@@ -171,7 +171,7 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         // Если нет изображений, сразу устанавливаем прогресс 100%
         if total == 0 {
             print("SCAN:TEST - No images found, setting progress to 100%")
-            let completedProgress = MediaCleanerServiceProgress(
+            let completedProgress = AICleanServiceProgress(
                 type: .image,
                 index: 0,
                 value: 1.0,
@@ -209,26 +209,26 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         ) {
             getPhotoPreview(asset, delivery: delivery, resize: resize, completion: completion)
         }
-        func insertedSimilar(_ model: MediaCleanerServiceModel) -> Bool {
+        func insertedSimilar(_ model: AICleanServiceModel) -> Bool {
             similar.insert(model).inserted
         }
-        func insertedDuplicates(_ model: MediaCleanerServiceModel) -> Bool {
+        func insertedDuplicates(_ model: AICleanServiceModel) -> Bool {
             duplicates.insert(model).inserted
         }
-        func insertedBlurred(_ model: MediaCleanerServiceModel) -> Bool {
+        func insertedBlurred(_ model: AICleanServiceModel) -> Bool {
             blurred.insert(model).inserted
         }
-        func insertedScreenshots(_ model: MediaCleanerServiceModel) -> Bool {
+        func insertedScreenshots(_ model: AICleanServiceModel) -> Bool {
             screenshots.insert(model).inserted
         }
 
-        var prevSimilarModel: MediaCleanerServiceModel?
-        var prevDuplicateModel: MediaCleanerServiceModel?
+        var prevSimilarModel: AICleanServiceModel?
+        var prevDuplicateModel: AICleanServiceModel?
         var prevDuplicateImage: UIImage?
 
         imageQueue.async {
             imageFetchResult.enumerateObjects { asset, index, _ in
-                let newProgress = MediaCleanerServiceProgress(
+                let newProgress = AICleanServiceProgress(
                     type: .image,
                     index: index,
                     value: Double(index + 1) / Double(total),
@@ -243,7 +243,7 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                     print("SCAN:TEST - Sending progress update: \(newProgress.value)")
                     self.progressSubject.send(newProgress)
                 }
-                let commonModel = MediaCleanerServiceModel(imageManager: imageManager, asset: asset, index: index)
+                let commonModel = AICleanServiceModel(imageManager: imageManager, asset: asset, index: index)
 
                 // MARK: - Finding duplicates
 
@@ -455,12 +455,12 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
 //        let megabytes = self.megabytes
         let _ = self._videosPreview
 
-        func insertedVideo(_ model: MediaCleanerServiceModel) -> Bool {
+        func insertedVideo(_ model: AICleanServiceModel) -> Bool {
             videos.insert(model).inserted
         }
         videoQueue.async {
             videoFetchResult.enumerateObjects { asset, index, _ in
-                let model = MediaCleanerServiceModel(imageManager: imageManager, asset: asset, index: index)
+                let model = AICleanServiceModel(imageManager: imageManager, asset: asset, index: index)
                 if insertedVideo(model) {
                     self.addMegabytes(count: model.asset.fakeSize, to: .video)
                 }
@@ -483,10 +483,10 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     func resetData() {
         print("SCAN:TEST - Resetting all data before new scan.")
         // Сброс всех Subjects к их начальным значениям
-        progressSubject.send(MediaCleanerServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false))
-        countsSubject.send(MediaCleanerServiceCounts<Int>())
-        megabytesSubject.send(MediaCleanerServiceCounts<Double>())
-        previewsSubject.send(MediaCleanerServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil))
+        progressSubject.send(AICleanServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false))
+        countsSubject.send(AICleanServiceCounts<Int>())
+        megabytesSubject.send(AICleanServiceCounts<Double>())
+        previewsSubject.send(AICleanServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil))
         
         // Также сбросьте все ваши локальные Set<MediaCleanerServiceModel>
         similar.removeAll()
@@ -496,8 +496,8 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         videos.removeAll()
     }
     
-    func getMedia(_ type: MediaCleanerServiceType) -> [MediaCleanerServiceSection] {
-        let arr: [MediaCleanerServiceSection] = {
+    func getMedia(_ type: AICleanServiceType) -> [AICleanServiceSection] {
+        let arr: [AICleanServiceSection] = {
             switch type {
             case .image(let imageType):
                 switch imageType {
@@ -615,22 +615,22 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
 }
 
 extension MediaCleanerService {
-    private func addMegabytes(count: Double, to type: MediaCleanerServiceType) {
+    private func addMegabytes(count: Double, to type: AICleanServiceType) {
         let currentMegabytes = megabytesSubject.value
         currentMegabytes.add(count: count, to: type)
         megabytesSubject.send(currentMegabytes)
     }
     
-    private func updatePreview(image: UIImage, for type: MediaCleanerServiceType) {
+    private func updatePreview(image: UIImage, for type: AICleanServiceType) {
         let currentPreviews = previewsSubject.value
-        let newPreviews: MediaCleanerServicePreviews
+        let newPreviews: AICleanServicePreviews
         
         switch type {
         case .image(let imageType):
             switch imageType {
             case .similar:
                 _similarPreview.send(image)
-                newPreviews = MediaCleanerServicePreviews(
+                newPreviews = AICleanServicePreviews(
                     _similar: image,
                     _duplicates: currentPreviews.duplicates,
                     _blurred: currentPreviews.blurred,
@@ -639,7 +639,7 @@ extension MediaCleanerService {
                 )
             case .duplicates:
                 _duplicatesPreview.send(image)
-                newPreviews = MediaCleanerServicePreviews(
+                newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: image,
                     _blurred: currentPreviews.blurred,
@@ -648,7 +648,7 @@ extension MediaCleanerService {
                 )
             case .blurred:
                 _blurredPreview.send(image)
-                newPreviews = MediaCleanerServicePreviews(
+                newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: currentPreviews.duplicates,
                     _blurred: image,
@@ -657,7 +657,7 @@ extension MediaCleanerService {
                 )
             case .screenshots:
                 _screenshotsPreview.send(image)
-                newPreviews = MediaCleanerServicePreviews(
+                newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: currentPreviews.duplicates,
                     _blurred: currentPreviews.blurred,
@@ -667,7 +667,7 @@ extension MediaCleanerService {
             }
         case .video:
             _videosPreview.send(image)
-            newPreviews = MediaCleanerServicePreviews(
+            newPreviews = AICleanServicePreviews(
                 _similar: currentPreviews.similar,
                 _duplicates: currentPreviews.duplicates,
                 _blurred: currentPreviews.blurred,

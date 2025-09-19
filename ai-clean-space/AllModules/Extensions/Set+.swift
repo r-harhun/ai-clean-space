@@ -1,16 +1,16 @@
 import Foundation
 
-extension Set where Element == MediaCleanerServiceModel {
+extension Set where Element == AICleanServiceModel {
 
-    var dateSections: [MediaCleanerServiceSection] {
+    var dateSections: [AICleanServiceSection] {
         makeDateSections(sortedByIndex)
     }
 
-    var equalitySections: [MediaCleanerServiceSection] {
+    var equalitySections: [AICleanServiceSection] {
         makeEqualitySections(sortedByEquality)
     }
 
-    var similaritySections: [MediaCleanerServiceSection] {
+    var similaritySections: [AICleanServiceSection] {
         makeSimilaritySections(sortedBySimilarity)
     }
 
@@ -26,9 +26,9 @@ extension Set where Element == MediaCleanerServiceModel {
         sorted(by: { $0.similarity < $1.similarity })
     }
 
-    private func makeDateSections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
+    private func makeDateSections(_ sorted: [AICleanServiceModel]) -> [AICleanServiceSection] {
+        var out: [AICleanServiceSection] = []
+        var models: [AICleanServiceModel] = []
         var prevDate = sorted.first(where: { $0.asset.creationDate != nil })?.asset.creationDate ??  Date(timeIntervalSince1970: 0)
         for (index, model) in sorted.enumerated() {
             if let curDate = model.asset.creationDate {
@@ -48,9 +48,9 @@ extension Set where Element == MediaCleanerServiceModel {
         return out
     }
 
-    private func makeEqualitySections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
+    private func makeEqualitySections(_ sorted: [AICleanServiceModel]) -> [AICleanServiceSection] {
+        var out: [AICleanServiceSection] = []
+        var models: [AICleanServiceModel] = []
         var prevProximity: Double = 0
         for (index, model) in sorted.enumerated() {
             if model.equality != prevProximity {
@@ -68,9 +68,9 @@ extension Set where Element == MediaCleanerServiceModel {
         return out
     }
 
-    private func makeSimilaritySections(_ sorted: [MediaCleanerServiceModel]) -> [MediaCleanerServiceSection] {
-        var out: [MediaCleanerServiceSection] = []
-        var models: [MediaCleanerServiceModel] = []
+    private func makeSimilaritySections(_ sorted: [AICleanServiceModel]) -> [AICleanServiceSection] {
+        var out: [AICleanServiceSection] = []
+        var models: [AICleanServiceModel] = []
         var prevProximity = Int.min
         for (index, model) in sorted.enumerated() {
             if model.similarity > prevProximity {

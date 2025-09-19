@@ -19,11 +19,11 @@ final class AICleanSpaceViewModel: ObservableObject {
     @Published var currentSelectedTab: TabType = .clean
     
     // MARK: - Media Cleaner Properties
-    @Published var progress: MediaCleanerServiceProgress = MediaCleanerServiceProgress(type: .image(.similar), index: 0, value: 0, isFinished: false)
-    @Published var counts: MediaCleanerServiceCounts<Int> = MediaCleanerServiceCounts<Int>()
-    @Published var megabytes: MediaCleanerServiceCounts<Double> = MediaCleanerServiceCounts<Double>()
-    @Published var previews: MediaCleanerServicePreviews = MediaCleanerServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil)
-    @Published var mediaWasDeleted: MediaCleanerServiceType = .image(.similar)
+    @Published var progress: AICleanServiceProgress = AICleanServiceProgress(type: .image(.similar), index: 0, value: 0, isFinished: false)
+    @Published var counts: AICleanServiceCounts<Int> = AICleanServiceCounts<Int>()
+    @Published var megabytes: AICleanServiceCounts<Double> = AICleanServiceCounts<Double>()
+    @Published var previews: AICleanServicePreviews = AICleanServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil)
+    @Published var mediaWasDeleted: AICleanServiceType = .image(.similar)
     
     // Individual preview properties
     @Published var similarPreview: UIImage? = nil
@@ -159,7 +159,7 @@ final class AICleanSpaceViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    func getMedia(for type: MediaCleanerServiceType) -> [MediaCleanerServiceSection] {
+    func getMedia(for type: AICleanServiceType) -> [AICleanServiceSection] {
         return mediaCleanerService.getMedia(type)
     }
     

@@ -3,7 +3,7 @@ import Photos
 import Combine
 import AVKit
 
-extension MediaCleanerServiceModel {
+extension AICleanServiceModel {
     
     /// Асинхронно загружает изображение и возвращает Publisher для SwiftUI
     func imagePublisher(size: CGSize) -> AnyPublisher<UIImage?, Never> {
@@ -108,10 +108,10 @@ class PHAssetImageLoader: ObservableObject {
     @Published var isLoading = false
     @Published var hasError = false
     
-    private let model: MediaCleanerServiceModel
+    private let model: AICleanServiceModel
     private let size: CGSize
     
-    init(model: MediaCleanerServiceModel, size: CGSize) {
+    init(model: AICleanServiceModel, size: CGSize) {
         self.model = model
         self.size = size
     }
@@ -140,7 +140,7 @@ class PHAssetImageLoader: ObservableObject {
 // MARK: - Video Player Component
 
 struct PHAssetVideoPlayerView: View {
-    let model: MediaCleanerServiceModel
+    let model: AICleanServiceModel
     @StateObject private var playerLoader = VideoPlayerLoader()
     
     var body: some View {
@@ -250,7 +250,7 @@ class VideoPlayerLoader: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
-    func loadVideo(for model: MediaCleanerServiceModel) {
+    func loadVideo(for model: AICleanServiceModel) {
         // Отменяем предыдущую загрузку
         currentTask?.cancel()
         cleanup()

@@ -3,35 +3,10 @@ import CoreData
 import Foundation
 import os.log
 
-// Import the data transfer objects from StoragePerformer
-
-protocol MediaCleanerCacheService {
-    func getBlurred(id: String) -> Bool?
-    func getDuplicate(id: String) -> (Bool, Double)?
-    func getSize(id: String) -> Double?
-    
-    // Swipe decisions: true = ignored, false = selected for smart cleaning, nil = no decision
-    func getSwipeDecision(id: String) -> Bool?
-    
-    // Get total count of swipe decisions marked for deletion (false value)
-    func getTotalSwipeDecisionsForDeletion() -> Int
-
-    func setBlurred(id: String, value: Bool)
-    func setDuplicate(id: String, value: Bool, equality: Double)
-    func setSize(id: String, value: Double)
-    func setSwipeDecision(id: String, ignored: Bool)
-
-    func deleteSize(id: String)
-    func deleteBlurred(id: String)
-    func deleteDuplicate(id: String)
-    func deleteSwipeDecision(id: String)
-    func deleteAllDuplicates()
-}
-
-final class MediaCleanerCacheServiceImpl: MediaCleanerCacheService {
-    static let shared: MediaCleanerCacheServiceImpl = {
+final class AICleanCacheService {
+    static let shared: AICleanCacheService = {
         print("SWIPE:DB:TEST - Creating MediaCleanerCacheServiceImpl.shared singleton")
-        let instance = MediaCleanerCacheServiceImpl(storagePerformer: StoragePerformerImpl())
+        let instance = AICleanCacheService(storagePerformer: StoragePerformerImpl())
         print("SWIPE:DB:TEST - MediaCleanerCacheServiceImpl.shared singleton created")
         return instance
     }()

@@ -3,7 +3,7 @@ import Photos
 
 /// SwiftUI View для отображения изображений из PHAsset
 struct PHAssetImageView: View {
-    let model: MediaCleanerServiceModel
+    let model: AICleanServiceModel
     let size: CGSize
     
     @State private var image: UIImage?
@@ -55,7 +55,7 @@ struct PHAssetImageView: View {
 
 /// Более продвинутая версия с кэшированием и дополнительными опциями
 struct AdvancedPHAssetImageView<PlaceholderView: View, ErrorView: View>: View {
-    let model: MediaCleanerServiceModel
+    let model: AICleanServiceModel
     let size: CGSize
     let contentMode: ContentMode
     let placeholder: PlaceholderView
@@ -66,7 +66,7 @@ struct AdvancedPHAssetImageView<PlaceholderView: View, ErrorView: View>: View {
     @State private var hasError = false
     
     init(
-        model: MediaCleanerServiceModel,
+        model: AICleanServiceModel,
         size: CGSize,
         contentMode: ContentMode = .fill,
         @ViewBuilder placeholder: () -> PlaceholderView,
@@ -120,7 +120,7 @@ struct AdvancedPHAssetImageView<PlaceholderView: View, ErrorView: View>: View {
 
 /// Упрощенная версия с минимальным кодом
 struct SimplePHAssetImageView: View {
-    let model: MediaCleanerServiceModel
+    let model: AICleanServiceModel
     let size: CGSize
     
     @State private var image: UIImage?
