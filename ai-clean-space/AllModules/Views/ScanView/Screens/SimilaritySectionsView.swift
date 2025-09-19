@@ -7,7 +7,6 @@ struct SimilaritySectionsView: View {
     @State private var chosenSection: AICleanServiceSection?
     @State private var chosenImageIndex: Int = 0
     
-    // Grid layout for gallery items, using a fixed size for stable layout
     private let galleryColumns: [GridItem] = [
         GridItem(.adaptive(minimum: 80), spacing: 8)
     ]

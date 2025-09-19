@@ -34,7 +34,6 @@ final class SimilaritySectionsViewModel: ObservableObject {
             selectedItems.insert(itemId)
         }
         
-        // Автоматически выходим из режима выделения, если ничего не выбрано
         if selectedItems.isEmpty {
             isSelectionMode = false
         }
@@ -71,7 +70,6 @@ final class SimilaritySectionsViewModel: ObservableObject {
             selectedItems.remove(model.asset.localIdentifier)
         }
         
-        // Автоматически выходим из режима выделения, если ничего не выбрано
         if selectedItems.isEmpty {
             isSelectionMode = false
         }
@@ -86,41 +84,29 @@ final class SimilaritySectionsViewModel: ObservableObject {
     func deleteSelected() {
            guard !selectedItems.isEmpty else { return }
            
-           // 1. Получаем ассеты по их localIdentifier
            let assetsToDelete = PHAsset.fetchAssets(withLocalIdentifiers: Array(selectedItems), options: nil)
            
-           // 2. Выполняем изменения в медиатеке
            PHPhotoLibrary.shared().performChanges({
                PHAssetChangeRequest.deleteAssets(assetsToDelete as NSFastEnumeration)
            }) { [weak self] success, error in
                DispatchQueue.main.async {
                    if success {
-                       print("✅ Successfully deleted \(self?.selectedItems.count ?? 0) items from the photo library.")
-                       
-                       // 3. Обновляем данные в ViewModel после успешного удаления
                        self?.removeDeletedItemsFromViewModel()
-                   } else if let error = error {
-                       print("❌ Error deleting assets: \(error.localizedDescription)")
-                       // Обработка ошибки удаления
                    }
                    
-                   // 4. Сбрасываем выбранные элементы и режим выделения
                    self?.selectedItems.removeAll()
                    self?.isSelectionMode = false
                }
            }
        }
        
-       // ✅ Новый вспомогательный метод для обновления данных после удаления
        private func removeDeletedItemsFromViewModel() {
            for localIdentifier in selectedItems {
-               // Ищем и удаляем элемент из каждой секции
                for i in sections.indices {
                    sections[i].models.removeAll { $0.asset.localIdentifier == localIdentifier }
                }
            }
            
-           // Удаляем пустые секции, если в них больше нет фотографий
            sections.removeAll { $0.models.isEmpty }
        }
 }
