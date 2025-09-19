@@ -2,21 +2,20 @@ import SwiftUI
 import Photos
 
 struct SimilaritySectionsView: View {
-    @StateObject private var viewModel: SimilaritySectionsViewModel
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedSection: AICleanServiceSection?
-    @State private var selectedImageIndex: Int = 0
+    @StateObject private var viewState: SimilaritySectionsViewModel
+    @Environment(\.dismiss) private var viewDismiss
+    @State private var chosenSection: AICleanServiceSection?
+    @State private var chosenImageIndex: Int = 0
 
     init(viewModel: SimilaritySectionsViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        _viewState = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation Bar
             HStack {
                 Button {
-                    dismiss()
+                    viewDismiss()
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
@@ -29,20 +28,20 @@ struct SimilaritySectionsView: View {
                 
                 Spacer()
                 
-                Text(viewModel.title)
+                Text(viewState.title)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(CMColor.primaryText)
                 
                 Spacer()
                 
                 Button {
-                    if viewModel.hasSelectedItems {
-                        viewModel.deselectAll()
+                    if viewState.hasSelectedItems {
+                        viewState.deselectAll()
                     } else {
-                        viewModel.selectAll()
+                        viewState.selectAll()
                     }
                 } label: {
-                    Text(viewModel.hasSelectedItems ? "Deselect All" : "Select All")
+                    Text(viewState.hasSelectedItems ? "Deselect All" : "Select All")
                         .font(.system(size: 17, weight: .regular))
                         .foregroundColor(.blue)
                 }
@@ -52,31 +51,30 @@ struct SimilaritySectionsView: View {
             .background(CMColor.backgroundSecondary)
 
             ZStack {
-        ScrollView(.vertical) {
-            VStack(spacing: 32) {
-                        ForEach(viewModel.sections.indices, id: \.self) { index in
-                            getSectionView(for: viewModel.sections[index])
+                ScrollView(.vertical) {
+                    VStack(spacing: 32) {
+                        ForEach(viewState.sections.indices, id: \.self) { index in
+                            createSectionView(for: viewState.sections[index])
                         }
                     }
                     .padding(12)
-                    .padding(.bottom, viewModel.hasSelectedItems ? 100 : 0) // Отступ для кнопки удаления
+                    .padding(.bottom, viewState.hasSelectedItems ? 100 : 0)
                 }
                 .background(CMColor.backgroundSecondary)
 
-                // Анимированная кнопка удаления
                 VStack {
                     Spacer()
                     
-                    if viewModel.hasSelectedItems {
+                    if viewState.hasSelectedItems {
                         Button {
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                viewModel.deleteSelected()
+                                viewState.deleteSelected()
                             }
                         } label: {
                             HStack {
                                 Image(systemName: "trash")
                                     .font(.system(size: 16, weight: .medium))
-                                Text("Delete \(viewModel.selectedCount) item\(viewModel.selectedCount == 1 ? "" : "s")")
+                                Text("Delete \(viewState.selectedCount) item\(viewState.selectedCount == 1 ? "" : "s")")
                                     .font(.system(size: 17, weight: .semibold))
                             }
                             .foregroundColor(.white)
@@ -86,35 +84,35 @@ struct SimilaritySectionsView: View {
                             .cornerRadius(12)
                         }
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 34) // Safe area bottom
+                        .padding(.bottom, 34)
                         .transition(.asymmetric(
                             insertion: .move(edge: .bottom).combined(with: .opacity),
                             removal: .move(edge: .bottom).combined(with: .opacity)
                         ))
                     }
                 }
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewModel.hasSelectedItems)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewState.hasSelectedItems)
             }
         }
         .background(CMColor.backgroundSecondary)
-        .fullScreenCover(item: $selectedSection) { section in
-            if viewModel.type == .videos {
+        .fullScreenCover(item: $chosenSection) { section in
+            if viewState.type == .videos {
                 SectionVideosItemPreview(
                     section: section,
-                    initialIndex: selectedImageIndex,
-                    viewModel: viewModel
+                    initialIndex: chosenImageIndex,
+                    viewModel: viewState
                 )
             } else {
                 SectionImagesItemPreview(
                     section: section,
-                    initialIndex: selectedImageIndex,
-                    viewModel: viewModel
+                    initialIndex: chosenImageIndex,
+                    viewModel: viewState
                 )
             }
         }
     }
 
-    private func getSectionView(for section: AICleanServiceSection) -> some View {
+    private func createSectionView(for section: AICleanServiceSection) -> some View {
         LazyVStack(spacing: 12) {
             HStack(alignment: .center) {
                 switch section.kind {
@@ -138,54 +136,50 @@ struct SimilaritySectionsView: View {
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        if viewModel.isAllSelectedInSection(section) {
-                            viewModel.deselectAllInSection(section)
+                        if viewState.isAllSelectedInSection(section) {
+                            viewState.deselectAllInSection(section)
                         } else {
-                            viewModel.selectAllInSection(section)
+                            viewState.selectAllInSection(section)
                         }
                     }
                 } label: {
-                    Text(viewModel.isAllSelectedInSection(section) ? "Deselect all" : "Select all")
+                    Text(viewState.isAllSelectedInSection(section) ? "Deselect all" : "Select all")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(viewModel.isAllSelectedInSection(section) ? Color.red : CMColor.primaryText)
+                        .foregroundStyle(viewState.isAllSelectedInSection(section) ? Color.red : CMColor.primaryText)
                 }
             }
 
             LazyVStack(alignment: .leading, spacing: 8) {
-                if viewModel.type == .duplicates || viewModel.type == .similar {
-                    getMainItemView(for: section)
+                if viewState.type == .duplicates || viewState.type == .similar {
+                    createPrimaryItemView(for: section)
                 }
 
-                let remainingModels = viewModel.type == .duplicates || viewModel.type == .similar ? Array(section.models.suffix(from: 1)) : section.models
+                let remainingModels = viewState.type == .duplicates || viewState.type == .similar ? Array(section.models.suffix(from: 1)) : section.models
                 FlexibleWrappingHStack(remainingModels.indices) { index in
                     let model = remainingModels[index]
-                    let actualIndex = viewModel.type == .duplicates || viewModel.type == .similar ? index + 1 : 0 // +1 because we skip first element
-                    getItemView(for: model, section: section, index: actualIndex)
+                    let actualIndex = viewState.type == .duplicates || viewState.type == .similar ? index + 1 : 0
+                    createGalleryItemView(for: model, section: section, index: actualIndex)
                 }
             }
         }
     }
 
-    private func getMainItemView(for section: AICleanServiceSection) -> some View {
+    private func createPrimaryItemView(for section: AICleanServiceSection) -> some View {
         VStack {
             if let firstModel = section.models.first {
                 Button {
-                    // Открываем детальный экран
-                    selectedImageIndex = 0
-                    selectedSection = section
+                    chosenImageIndex = 0
+                    chosenSection = section
                 } label: {
                     ZStack {
                         firstModel.imageView(size: CGSize(width: 176, height: 176))
                         
-                        // Добавляем индикатор видео если это видео
-                        if viewModel.type == .videos {
-                            // Play icon overlay
+                        if viewState.type == .videos {
                             Image(systemName: "play.circle.fill")
                                 .font(.system(size: 40))
                                 .foregroundColor(.white)
                                 .shadow(radius: 4)
                             
-                            // Duration overlay в правом нижнем углу
                             VStack {
                                 Spacer()
                                 HStack {
@@ -215,20 +209,19 @@ struct SimilaritySectionsView: View {
         .clipped()
         .overlay {
             VStack {
-                // Чекбокс в верхнем правом углу
                 HStack {
                     Spacer()
                     
                     if let firstModel = section.models.first {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                viewModel.toggleSelection(for: firstModel)
-                                if !viewModel.isSelectionMode {
-                                    viewModel.isSelectionMode = true
+                                viewState.toggleSelection(for: firstModel)
+                                if !viewState.isSelectionMode {
+                                    viewState.isSelectionMode = true
                                 }
                             }
                         } label: {
-                            CheckboxView(isSelected: viewModel.isSelected(firstModel))
+                            CheckboxView(isSelected: viewState.isSelected(firstModel))
                         }
                     }
                 }
@@ -249,18 +242,16 @@ struct SimilaritySectionsView: View {
             }
             .padding(12)
         }
-        .scaleEffect(section.models.first.map { viewModel.isSelected($0) } ?? false ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: section.models.first.map { viewModel.isSelected($0) } ?? false)
+        .scaleEffect(section.models.first.map { viewState.isSelected($0) } ?? false ? 0.95 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: section.models.first.map { viewState.isSelected($0) } ?? false)
     }
 
-    private func getItemView(for model: AICleanServiceModel, section: AICleanServiceSection, index: Int) -> some View {
-        // Учитываем: padding контейнера (12*2) + отступы между элементами (8*3) + запас
+    private func createGalleryItemView(for model: AICleanServiceModel, section: AICleanServiceSection, index: Int) -> some View {
         let itemSize = (UIScreen.main.bounds.width - 24 - 24 - 16) / 4
 
         return Button {
-            // Открываем детальный экран с выбранным индексом
-            selectedImageIndex = index
-            selectedSection = section
+            chosenImageIndex = index
+            chosenSection = section
         } label: {
             VStack {
                 ZStack {
@@ -268,15 +259,12 @@ struct SimilaritySectionsView: View {
                         size: CGSize(width: itemSize, height: itemSize)
                     )
                     
-                    // Добавляем индикатор видео если это видео
-                    if viewModel.type == .videos {
-                        // Play icon overlay
+                    if viewState.type == .videos {
                         Image(systemName: "play.circle.fill")
                             .font(.system(size: 16))
                             .foregroundColor(.white)
                             .shadow(radius: 2)
                         
-                        // Duration overlay в правом нижнем углу
                         VStack {
                             Spacer()
                             HStack {
@@ -300,33 +288,31 @@ struct SimilaritySectionsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .clipped()
         .overlay(
-            // Чекбокс в верхнем правом углу
             VStack {
                 HStack {
                     Spacer()
 
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            viewModel.toggleSelection(for: model)
-                            if !viewModel.isSelectionMode {
-                                viewModel.isSelectionMode = true
+                            viewState.toggleSelection(for: model)
+                            if !viewState.isSelectionMode {
+                                viewState.isSelectionMode = true
                             }
                         }
                     } label: {
-                        CheckboxView(isSelected: viewModel.isSelected(model))
-                            .scaleEffect(0.8) // Меньший размер для маленьких изображений
+                        CheckboxView(isSelected: viewState.isSelected(model))
+                            .scaleEffect(0.8)
                     }
                 }
                 Spacer()
             }
             .padding(4)
         )
-        .scaleEffect(viewModel.isSelected(model) ? 0.9 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isSelected(model))
+        .scaleEffect(viewState.isSelected(model) ? 0.9 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: viewState.isSelected(model))
     }
 }
 
-// MARK: - CheckboxView Component
 struct CheckboxView: View {
     let isSelected: Bool
     

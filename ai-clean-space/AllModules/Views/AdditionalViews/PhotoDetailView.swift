@@ -38,7 +38,6 @@ struct PhotoDetailView: View {
         }
         .navigationBarHidden(true)
         .statusBarHidden(false)
-        // .preferredColorScheme(.dark) // Removed to allow system theme adaptation
         .alert("Delete Photo", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
                 deletePhoto()
