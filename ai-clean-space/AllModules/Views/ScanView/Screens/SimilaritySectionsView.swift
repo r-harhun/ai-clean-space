@@ -6,95 +6,107 @@ struct SimilaritySectionsView: View {
     @Environment(\.dismiss) private var viewDismiss
     @State private var chosenSection: AICleanServiceSection?
     @State private var chosenImageIndex: Int = 0
+    
+    // Grid layout for gallery items, using a fixed size for stable layout
+    private let galleryColumns: [GridItem] = [
+        GridItem(.adaptive(minimum: 80), spacing: 8)
+    ]
 
     init(viewModel: SimilaritySectionsViewModel) {
         _viewState = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button {
-                    viewDismiss()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .medium))
-                        Text("Media")
-                            .font(.system(size: 17, weight: .regular))
+        ZStack {
+            // MARK: - Navigation Bar
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    Button {
+                        viewDismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(CMColor.secondaryText)
+                            .opacity(viewState.hasSelectedItems ? 0 : 1)
+                            .animation(.easeInOut, value: viewState.hasSelectedItems)
                     }
-                    .foregroundColor(.blue)
-                }
-                
-                Spacer()
-                
-                Text(viewState.title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(CMColor.primaryText)
-                
-                Spacer()
-                
-                Button {
-                    if viewState.hasSelectedItems {
-                        viewState.deselectAll()
-                    } else {
-                        viewState.selectAll()
-                    }
-                } label: {
-                    Text(viewState.hasSelectedItems ? "Deselect All" : "Select All")
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(.blue)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(CMColor.backgroundSecondary)
 
-            ZStack {
-                ScrollView(.vertical) {
-                    VStack(spacing: 32) {
+                    Spacer()
+
+                    Text(viewState.title)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(CMColor.white)
+                    
+                    Spacer()
+
+                    Button {
+                        if viewState.hasSelectedItems {
+                            viewState.deselectAll()
+                        } else {
+                            viewState.selectAll()
+                        }
+                    } label: {
+                        Image(systemName: viewState.hasSelectedItems ? "square.dashed.inset.fill" : "square.dashed")
+                            .font(.system(size: 28, weight: .regular))
+                            .foregroundColor(CMColor.primary)
+                            .animation(.spring(), value: viewState.hasSelectedItems)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(CMColor.backgroundSecondary)
+                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+            
+                // MARK: - Scrollable Content
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(spacing: 24) {
                         ForEach(viewState.sections.indices, id: \.self) { index in
                             createSectionView(for: viewState.sections[index])
                         }
                     }
                     .padding(12)
-                    .padding(.bottom, viewState.hasSelectedItems ? 100 : 0)
+                    .padding(.bottom, viewState.hasSelectedItems ? 120 : 0)
                 }
-                .background(CMColor.backgroundSecondary)
-
-                VStack {
-                    Spacer()
-                    
-                    if viewState.hasSelectedItems {
-                        Button {
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                viewState.deleteSelected()
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "trash")
-                                    .font(.system(size: 16, weight: .medium))
-                                Text("Delete \(viewState.selectedCount) item\(viewState.selectedCount == 1 ? "" : "s")")
-                                    .font(.system(size: 17, weight: .semibold))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.red)
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 34)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .move(edge: .bottom).combined(with: .opacity)
-                        ))
-                    }
-                }
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewState.hasSelectedItems)
+                .background(CMColor.background)
             }
+            .background(CMColor.background)
+            .ignoresSafeArea(.all, edges: .bottom)
+
+            // MARK: - Floating Delete Button
+            VStack {
+                Spacer()
+                if viewState.hasSelectedItems {
+                    Button {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            viewState.deleteSelected()
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                            
+                            Text("Delete \(viewState.selectedCount) item\(viewState.selectedCount == 1 ? "" : "s")")
+                                .font(.system(size: 18, weight: .bold))
+                        }
+                        .foregroundColor(CMColor.white)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [CMColor.error.opacity(0.8), CMColor.error]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .clipShape(Capsule())
+                        .shadow(color: CMColor.error.opacity(0.4), radius: 10, x: 0, y: 5)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.bottom, 32)
+                }
+            }
+            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewState.hasSelectedItems)
         }
-        .background(CMColor.backgroundSecondary)
         .fullScreenCover(item: $chosenSection) { section in
             if viewState.type == .videos {
                 SectionVideosItemPreview(
@@ -113,29 +125,28 @@ struct SimilaritySectionsView: View {
     }
 
     private func createSectionView(for section: AICleanServiceSection) -> some View {
-        LazyVStack(spacing: 12) {
-            HStack(alignment: .center) {
+        VStack(alignment: .leading, spacing: 16) {
+            // Section header
+            HStack {
                 switch section.kind {
                 case .count:
                     Text("\(section.models.count) items")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(CMColor.primaryText)
-
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(CMColor.secondaryText)
                 case .date(let date):
                     Text(date?.formatAsShortDate() ?? "")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(CMColor.primaryText)
-
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(CMColor.secondaryText)
                 case .united(let date):
                     Text(date?.formatAsShortDate() ?? "")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(CMColor.primaryText)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(CMColor.secondaryText)
                 }
 
                 Spacer()
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(.easeInOut) {
                         if viewState.isAllSelectedInSection(section) {
                             viewState.deselectAllInSection(section)
                         } else {
@@ -144,193 +155,191 @@ struct SimilaritySectionsView: View {
                     }
                 } label: {
                     Text(viewState.isAllSelectedInSection(section) ? "Deselect all" : "Select all")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(viewState.isAllSelectedInSection(section) ? Color.red : CMColor.primaryText)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(viewState.isAllSelectedInSection(section) ? CMColor.error : CMColor.primary)
                 }
             }
-
-            LazyVStack(alignment: .leading, spacing: 8) {
+            
+            // Grid layout
+            VStack(alignment: .leading, spacing: 8) {
                 if viewState.type == .duplicates || viewState.type == .similar {
-                    createPrimaryItemView(for: section)
+                    if let firstModel = section.models.first {
+                        createPrimaryItemView(for: firstModel, section: section, index: 0)
+                            .padding(.top, 24)
+                    }
                 }
 
                 let remainingModels = viewState.type == .duplicates || viewState.type == .similar ? Array(section.models.suffix(from: 1)) : section.models
-                FlexibleWrappingHStack(remainingModels.indices) { index in
-                    let model = remainingModels[index]
-                    let actualIndex = viewState.type == .duplicates || viewState.type == .similar ? index + 1 : 0
-                    createGalleryItemView(for: model, section: section, index: actualIndex)
+                
+                LazyVGrid(columns: galleryColumns, spacing: 8) {
+                    ForEach(remainingModels.indices, id: \.self) { index in
+                        let model = remainingModels[index]
+                        let actualIndex = (viewState.type == .duplicates || viewState.type == .similar) ? index + 1 : index
+                        createGalleryItemView(for: model, section: section, index: actualIndex)
+                    }
                 }
             }
         }
+        .padding(16)
+        .background(CMColor.surface)
+        .cornerRadius(20)
+        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
     }
 
-    private func createPrimaryItemView(for section: AICleanServiceSection) -> some View {
-        VStack {
-            if let firstModel = section.models.first {
-                Button {
-                    chosenImageIndex = 0
-                    chosenSection = section
-                } label: {
-                    ZStack {
-                        firstModel.imageView(size: CGSize(width: 176, height: 176))
-                        
-                        if viewState.type == .videos {
-                            Image(systemName: "play.circle.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(.white)
-                                .shadow(radius: 4)
-                            
-                            VStack {
-                                Spacer()
-                                HStack {
-                                    Spacer()
-                                    Text(firstModel.formattedDuration)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 3)
-                                        .background(Color.black.opacity(0.7))
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                                }
-                            }
-                            .padding(8)
-                        }
+    private func createPrimaryItemView(for model: AICleanServiceModel, section: AICleanServiceSection, index: Int) -> some View {
+        let isSelected = viewState.isSelected(model)
+        let cornerRadius: CGFloat = 16
+        let itemSize: CGFloat = 176
+        
+        return ZStack(alignment: .topLeading) {
+            model.imageView(size: CGSize(width: itemSize, height: itemSize))
+                .cornerRadius(cornerRadius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(CMColor.primary, lineWidth: isSelected ? 3 : 0)
+                )
+            
+            // "Best" icon
+            Image(systemName: "star.circle.fill")
+                .foregroundColor(CMColor.primary)
+                .font(.system(size: 24))
+                .shadow(radius: 2)
+                .padding(8)
+
+            if viewState.type == .videos {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Text(model.formattedDuration)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(CMColor.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(CMColor.black.opacity(0.7))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        Spacer()
                     }
                 }
-                .buttonStyle(PlainButtonStyle())
-            } else {
-                Rectangle()
-                    .frame(width: 176, height: 176)
-                    .foregroundStyle(Color.gray.opacity(0.3))
+                .padding(8)
             }
-        }
-        .frame(width: 176, height: 176)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .clipped()
-        .overlay {
-            VStack {
-                HStack {
-                    Spacer()
-                    
-                    if let firstModel = section.models.first {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                viewState.toggleSelection(for: firstModel)
-                                if !viewState.isSelectionMode {
-                                    viewState.isSelectionMode = true
-                                }
-                            }
-                        } label: {
-                            CheckboxView(isSelected: viewState.isSelected(firstModel))
-                        }
-                    }
+            
+            // Selection overlay and Checkbox
+            Group {
+                if isSelected {
+                    Color.black.opacity(0.6)
+                        .cornerRadius(cornerRadius)
                 }
                 
-                Spacer()
-
-                HStack {
-                    Text("Best")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(CMColor.primaryText)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(CMColor.border)
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
-
-                    Spacer()
-                }
+                CheckboxView(isSelected: isSelected)
+                    .padding(8)
             }
-            .padding(12)
+            .frame(width: itemSize, height: itemSize, alignment: .topTrailing)
+            .opacity(isSelected || viewState.isSelectionMode ? 1.0 : 0.0)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
+            .animation(.easeInOut(duration: 0.2), value: viewState.isSelectionMode)
         }
-        .scaleEffect(section.models.first.map { viewState.isSelected($0) } ?? false ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: section.models.first.map { viewState.isSelected($0) } ?? false)
+        .frame(width: itemSize, height: itemSize)
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .onTapGesture {
+            if viewState.isSelectionMode {
+                viewState.toggleSelection(for: model)
+            } else {
+                chosenImageIndex = index
+                chosenSection = section
+            }
+        }
+        .onLongPressGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewState.isSelectionMode = true
+                viewState.toggleSelection(for: model)
+            }
+        }
     }
 
     private func createGalleryItemView(for model: AICleanServiceModel, section: AICleanServiceSection, index: Int) -> some View {
-        let itemSize = (UIScreen.main.bounds.width - 24 - 24 - 16) / 4
-
-        return Button {
-            chosenImageIndex = index
-            chosenSection = section
-        } label: {
-            VStack {
-                ZStack {
-                    model.imageView(
-                        size: CGSize(width: itemSize, height: itemSize)
-                    )
-                    
-                    if viewState.type == .videos {
-                        Image(systemName: "play.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                            .shadow(radius: 2)
-                        
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Text(model.formattedDuration)
-                                    .font(.system(size: 8, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 3)
-                                    .padding(.vertical, 1)
-                                    .background(Color.black.opacity(0.7))
-                                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                            }
-                        }
-                        .padding(3)
+        let isSelected = viewState.isSelected(model)
+        let cornerRadius: CGFloat = 8
+        let itemSize: CGFloat = 80
+        
+        return ZStack {
+            model.imageView(size: CGSize(width: itemSize, height: itemSize))
+                .cornerRadius(cornerRadius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(CMColor.primary, lineWidth: isSelected ? 3 : 0)
+                )
+            
+            if viewState.type == .videos {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Text(model.formattedDuration)
+                            .font(.system(size: 8, weight: .medium))
+                            .foregroundColor(CMColor.white)
+                            .padding(.horizontal, 3)
+                            .padding(.vertical, 1)
+                            .background(CMColor.black.opacity(0.7))
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                        Spacer()
                     }
                 }
+                .padding(4)
+            }
+            
+            // Selection overlay and Checkbox
+            Group {
+                if isSelected {
+                    Color.black.opacity(0.6)
+                        .cornerRadius(cornerRadius)
+                }
+                
+                CheckboxView(isSelected: isSelected)
+                    .padding(4)
+            }
+            .frame(width: itemSize, height: itemSize, alignment: .topTrailing)
+            .opacity(isSelected || viewState.isSelectionMode ? 1.0 : 0.0)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
+            .animation(.easeInOut(duration: 0.2), value: viewState.isSelectionMode)
+        }
+        .frame(width: itemSize, height: itemSize)
+        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipped()
+        .onTapGesture {
+            if viewState.isSelectionMode {
+                viewState.toggleSelection(for: model)
+            } else {
+                chosenImageIndex = index
+                chosenSection = section
             }
         }
-        .buttonStyle(PlainButtonStyle())
-        .frame(width: itemSize, height: itemSize)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .clipped()
-        .overlay(
-            VStack {
-                HStack {
-                    Spacer()
-
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            viewState.toggleSelection(for: model)
-                            if !viewState.isSelectionMode {
-                                viewState.isSelectionMode = true
-                            }
-                        }
-                    } label: {
-                        CheckboxView(isSelected: viewState.isSelected(model))
-                            .scaleEffect(0.8)
-                    }
-                }
-                Spacer()
+        .onLongPressGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewState.isSelectionMode = true
+                viewState.toggleSelection(for: model)
             }
-            .padding(4)
-        )
-        .scaleEffect(viewState.isSelected(model) ? 0.9 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: viewState.isSelected(model))
+        }
     }
 }
 
+// MARK: - Checkbox View
 struct CheckboxView: View {
     let isSelected: Bool
     
     var body: some View {
         ZStack {
             Circle()
-                .fill(isSelected ? Color.blue : Color.clear)
+                .fill(isSelected ? CMColor.primary : CMColor.clear)
                 .frame(width: 24, height: 24)
                 .overlay(
                     Circle()
-                        .stroke(isSelected ? Color.blue : Color.white, lineWidth: 2)
+                        .stroke(isSelected ? CMColor.primary : CMColor.white, lineWidth: 2)
                 )
                 .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
             
             if isSelected {
                 Image(systemName: "checkmark")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(CMColor.white)
                     .scaleEffect(isSelected ? 1.0 : 0.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
             }
