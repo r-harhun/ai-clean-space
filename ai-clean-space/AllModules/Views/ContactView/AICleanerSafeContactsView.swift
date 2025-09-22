@@ -574,8 +574,3 @@ struct SafeContactCardView: UIViewControllerRepresentable {
         }
     }
 }
-
-// MARK: - Preview
-#Preview {
-    AICleanerSafeContactsView()
-}

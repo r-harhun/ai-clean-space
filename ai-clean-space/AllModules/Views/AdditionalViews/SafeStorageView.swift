@@ -117,6 +117,21 @@ struct SafeStorageView: View {
             isSearchFocused = false
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .fullScreenCover(isPresented: $showPhotosView) {
+            MainPhotosView()
+        }
+        .fullScreenCover(isPresented: $showVideosView) {
+            VideosView()
+                .environmentObject(safeStorageManager)
+        }
+        .fullScreenCover(isPresented: $showContactsView) {
+            AICleanerSafeContactsView()
+        }
+        .fullScreenCover(isPresented: $showDocumentsView) {
+            DocumentsView()
+                .environmentObject(safeStorageManager)
+        }
     }
     
     // MARK: - Subviews
