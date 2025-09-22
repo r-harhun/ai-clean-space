@@ -1,6 +1,4 @@
 import SwiftUI
-import CoreData
-import Contacts
 import ContactsUI
 
 struct AICleanerContactsView: View {
@@ -143,6 +141,7 @@ struct AICleanerContactsView: View {
         .padding(.vertical, 16 * scalingFactor)
     }
     
+    // MARK: - Contact Category Button
     private func contactCategoryButton(category: ContactCategory, scalingFactor: CGFloat) -> some View {
         Button(action: {
             switch category {
@@ -155,55 +154,45 @@ struct AICleanerContactsView: View {
             }
         }) {
             VStack(alignment: .leading, spacing: 12 * scalingFactor) {
-                // Main content of the button
-                HStack(alignment: .center, spacing: 16 * scalingFactor) { // Changed alignment to center
+                HStack(alignment: .top, spacing: 16 * scalingFactor) {
                     VStack(alignment: .leading, spacing: 8 * scalingFactor) {
+                        HStack {
+                            Image(systemName: category.systemImage)
+                                .font(.system(size: 24 * scalingFactor))
+                                .foregroundColor(CMColor.primary)
+                            
+                            Text(category.rawValue)
+                                .font(.system(size: 18 * scalingFactor, weight: .semibold))
+                                .foregroundColor(CMColor.primaryText)
+                        }
                         
-                        // Icon
-                        Image(systemName: category.systemImage)
-                            .font(.system(size: 36 * scalingFactor, weight: .regular))
-                            .foregroundColor(.white)
-                            .shadow(radius: 5)
-                        
-                        // Title
-                        Text(category.rawValue)
-                            .font(.system(size: 20 * scalingFactor, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        // Subtitle
                         Text(getSubtitleForCategory(category))
                             .font(.system(size: 14 * scalingFactor, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(CMColor.secondaryText)
                     }
                     
                     Spacer()
                     
-                    // Count and chevron
-                    VStack(alignment: .trailing, spacing: 4 * scalingFactor) {
+                    HStack(spacing: 8 * scalingFactor) {
                         Text(getCountForCategory(category))
-                            .font(.system(size: 28 * scalingFactor, weight: .heavy))
-                            .foregroundColor(.white)
-                            .shadow(radius: 5)
-                        
-                        Spacer() 
+                            .font(.system(size: 16 * scalingFactor, weight: .semibold))
+                            .foregroundColor(CMColor.primaryText)
                         
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 16 * scalingFactor, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 14 * scalingFactor, weight: .semibold))
+                            .foregroundColor(CMColor.secondaryText)
                     }
                 }
-                .padding(20 * scalingFactor)
-                .frame(maxWidth: .infinity)
-                .frame(height: 120 * scalingFactor)
+                .padding(.horizontal, 16 * scalingFactor)
+                .padding(.vertical, 12 * scalingFactor)
                 .background(
-                    LinearGradient(
-                        gradient: getGradientForCategory(category),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    RoundedRectangle(cornerRadius: 12 * scalingFactor)
+                        .fill(CMColor.surface)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12 * scalingFactor)
+                                .stroke(CMColor.border, lineWidth: 1)
+                        )
                 )
-                .cornerRadius(24 * scalingFactor)
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
         }
     }
@@ -232,25 +221,12 @@ struct AICleanerContactsView: View {
         }
     }
     
-    private func getGradientForCategory(_ category: ContactCategory) -> Gradient {
-        switch category {
-        case .allContacts:
-            return Gradient(colors: [CMColor.primary.opacity(0.9), CMColor.primary.opacity(0.2)])
-        case .duplicates:
-            return Gradient(colors: [CMColor.error.opacity(0.9), CMColor.error.opacity(0.2)])
-        case .incomplete:
-            return Gradient(colors: [CMColor.warning.opacity(0.9), CMColor.warning.opacity(0.2)])
-        }
-    }
-    
     private func isIncompleteContact(_ contact: CNContact) -> Bool {
         let hasName = !contact.givenName.isEmpty || !contact.familyName.isEmpty
         let hasPhone = !contact.phoneNumbers.isEmpty
         
         return !hasName || !hasPhone
     }
-    
-    
     
     private func permissionRequestView(scalingFactor: CGFloat) -> some View {
         VStack(spacing: 24 * scalingFactor) {
