@@ -27,7 +27,8 @@ struct MainView: View {
     @Binding var isPaywallPresented: Bool
     
     @State private var presentedView: CategoryViewType?
-    
+    @State private var showSettingsView = false
+
     init(isPaywallPresented: Binding<Bool>) {
         self._isPaywallPresented = isPaywallPresented
         print("SCAN:TEST - MainViewModel init called")
@@ -47,20 +48,35 @@ struct MainView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    
                     // Header Section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("AI-Clean-Space")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.black)
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("AI Clean Space")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.black)
+                            
+                            if viewModel.progress < 1 {
+                                Text("Scanning: \(Int(viewModel.progress * 100))%")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.gray)
+                            } else {
+                                Text("Your Personal AI-powered Analysis Is Ready:")
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(.gray)
+                                Text(viewModel.subtitle)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.gray)
+                            }
+                        }
                         
-                        if viewModel.progress < 1 {
-                            Text("Scanning: \(Int(viewModel.progress * 100))%")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.gray)
-                        } else {
-                            Text(viewModel.subtitle)
-                                .font(.system(size: 18, weight: .semibold))
+                        Spacer()
+                        
+                        // Settings Button
+                        Button(action: {
+                            showSettingsView = true
+                        }) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.title2)
                                 .foregroundColor(.gray)
                         }
                     }
@@ -133,6 +149,9 @@ struct MainView: View {
                         )
                     )
                 }
+            }
+            .fullScreenCover(isPresented: $showSettingsView) {
+                SettingsView(isPaywallPresented: $isPaywallPresented)
             }
         }
     }

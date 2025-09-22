@@ -100,28 +100,7 @@ final class AICleanSpaceViewModel: ObservableObject {
             .assign(to: \.videosPreview, on: self)
             .store(in: &cancellables)
     }
-    
-    // MARK: - Computed Properties
-    var categoryGridColumns: [GridItem] {
-        [
-            GridItem(.flexible(), spacing: 16),
-            GridItem(.flexible(), spacing: 16)
-        ]
-    }
-    
-    var totalFilesText: String {
-        switch mainScanState {
-        case .idle:
-            return "7 159 files • 110.18 Gb will be cleaned"
-        case .scanning:
-            return "Scanning..."
-        case .completed:
-            return "7 159 files • 110.18 Gb will be cleaned"
-        }
-    }
-    
-    // MARK: - Public Methods
-    
+        
     // MARK: - Media Cleaner Methods
     func checkPhotoLibraryPermission() -> PHAuthorizationStatus {
         return mediaCleanerService.checkAuthStatus()

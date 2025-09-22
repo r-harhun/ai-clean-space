@@ -4,29 +4,6 @@ import Contacts
 
 @MainActor
 final class MainViewModel: ObservableObject {
-    @Published var subtitle = ""
-    @Published var progress = Double.zero
-
-    @Published var previews = AICleanServicePreviews(
-        _similar: nil,
-        _duplicates: nil,
-        _blurred: nil,
-        _screenshots: nil,
-        _videos: nil
-    )
-    @Published var counts = AICleanServiceCounts<Int>()
-    @Published var megabytes = AICleanServiceCounts<Double>()
-    
-    // Добавляем поддержку контактов и календаря
-    @Published var contactsCount: Int = 0
-    @Published var calendarEventsCount: Int = 0
-    @Published var isContactsLoading: Bool = false
-    @Published var isCalendarLoading: Bool = false
-    
-    // Состояния разрешений
-    @Published var contactsPermissionStatus: ContactPermissionStatus = .notDetermined
-    @Published var calendarPermissionStatus: CalendarPermissionStatus = .notDetermined
-    
     enum ContactPermissionStatus {
         case notDetermined
         case denied
@@ -40,7 +17,25 @@ final class MainViewModel: ObservableObject {
         case authorized
         case loading
     }
-
+    
+    @Published var subtitle = ""
+    @Published var progress = Double.zero
+    @Published var counts = AICleanServiceCounts<Int>()
+    @Published var megabytes = AICleanServiceCounts<Double>()
+    @Published var contactsCount: Int = 0
+    @Published var calendarEventsCount: Int = 0
+    @Published var isContactsLoading: Bool = false
+    @Published var isCalendarLoading: Bool = false
+    @Published var contactsPermissionStatus: ContactPermissionStatus = .notDetermined
+    @Published var calendarPermissionStatus: CalendarPermissionStatus = .notDetermined
+    @Published var previews = AICleanServicePreviews(
+        _similar: nil,
+        _duplicates: nil,
+        _blurred: nil,
+        _screenshots: nil,
+        _videos: nil
+    )
+    
     private let mediaCleanerService = MediaCleanerService.shared
     private let contactsViewModel: AICleanerContactsViewModel
     private let calendarService: CalendarService
@@ -54,18 +49,27 @@ final class MainViewModel: ObservableObject {
     }
     
     init() {
-        print("SCAN:TEST -  init started")
         self.contactsViewModel = AICleanerContactsViewModel()
         self.calendarService = CalendarService()
-        print("SCAN:TEST - About to setupBindings")
         setupBindings()
-        print("SCAN:TEST - About to checkInitialPermissions")
         checkInitialPermissions()
-        print("SCAN:TEST -  init completed, progress: \(progress)")
     }
     
     private func checkInitialPermissions() {
-        // Проверяем разрешения контактов
+        let calendarStatus = calendarService.authorizationStatus
+        switch calendarStatus {
+        case .fullAccess:
+            calendarPermissionStatus = .authorized
+        case .denied, .restricted:
+            calendarPermissionStatus = .denied
+        case .notDetermined:
+            calendarPermissionStatus = .notDetermined
+        case .writeOnly:
+            calendarPermissionStatus = .denied
+        @unknown default:
+            calendarPermissionStatus = .notDetermined
+        }
+        
         let contactsStatus = CNContactStore.authorizationStatus(for: .contacts)
         switch contactsStatus {
         case .authorized, .limited:
@@ -77,86 +81,40 @@ final class MainViewModel: ObservableObject {
         @unknown default:
             contactsPermissionStatus = .notDetermined
         }
-        
-        // Проверяем разрешения календаря
-        let calendarStatus = calendarService.authorizationStatus
-        if #available(iOS 17.0, *) {
-            switch calendarStatus {
-            case .fullAccess:
-                calendarPermissionStatus = .authorized
-            case .denied, .restricted:
-                calendarPermissionStatus = .denied
-            case .notDetermined:
-                calendarPermissionStatus = .notDetermined
-            case .writeOnly:
-                calendarPermissionStatus = .denied
-            @unknown default:
-                calendarPermissionStatus = .notDetermined
-            }
-        } else {
-            switch calendarStatus {
-            case .authorized, .fullAccess, .writeOnly:
-                calendarPermissionStatus = .authorized
-            case .denied, .restricted:
-                calendarPermissionStatus = .denied
-            case .notDetermined:
-                calendarPermissionStatus = .notDetermined
-            @unknown default:
-                calendarPermissionStatus = .notDetermined
-            }
-        }
     }
 
     func onAppear() {
-        print("SCAN:TEST - onAppear called, current progress: \(progress)")
-        // Сначала запрашиваем все разрешения, затем загружаем данные
         requestAllPermissions()
     }
     
-    /// Запрашивает все необходимые разрешения при запуске приложения
     private func requestAllPermissions() {
-        print("SCAN:TEST - Starting permission requests for all services")
-        
         Task { @MainActor in
-            // Запрашиваем разрешения параллельно
             async let photoPermission = requestPhotoLibraryPermission()
             async let contactsPermission = requestContactsPermissionAsync()
             async let calendarPermission = requestCalendarPermissionAsync()
             
-            // Ждем получения всех разрешений
             let (photoGranted, contactsGranted, calendarGranted) = await (photoPermission, contactsPermission, calendarPermission)
-            
-            print("SCAN:TEST - Permissions received - Photo: \(photoGranted), Contacts: \(contactsGranted), Calendar: \(calendarGranted)")
-            
-            // Запускаем загрузку данных в зависимости от полученных разрешений
             startDataLoading(photoGranted: photoGranted, contactsGranted: contactsGranted, calendarGranted: calendarGranted)
         }
     }
     
-    /// Запрашивает разрешение на доступ к фотогалерее
     private func requestPhotoLibraryPermission() async -> Bool {
-        print("SCAN:TEST - Requesting photo library permission")
-        return await withCheckedContinuation { continuation in
+        await withCheckedContinuation { continuation in
             mediaCleanerService.requestAuthorization { status in
                 let granted = status == .authorized || status == .limited
-                print("SCAN:TEST - Photo library permission: \(granted)")
                 continuation.resume(returning: granted)
             }
         }
     }
     
-    /// Запрашивает разрешение на доступ к контактам (async версия)
     private func requestContactsPermissionAsync() async -> Bool {
-        print("SCAN:TEST - Requesting contacts permission")
-        return await withCheckedContinuation { continuation in
+        await withCheckedContinuation { continuation in
             let store = CNContactStore()
             store.requestAccess(for: .contacts) { granted, error in
                 DispatchQueue.main.async {
                     if granted {
-                        print("SCAN:TEST - Contacts permission granted")
                         self.contactsPermissionStatus = .authorized
                     } else {
-                        print("SCAN:TEST - Contacts permission denied: \(error?.localizedDescription ?? "Unknown error")")
                         self.contactsPermissionStatus = .denied
                     }
                     continuation.resume(returning: granted)
@@ -165,100 +123,56 @@ final class MainViewModel: ObservableObject {
         }
     }
     
-    /// Запрашивает разрешение на доступ к календарю (async версия)
     private func requestCalendarPermissionAsync() async -> Bool {
-        print("SCAN:TEST - Requesting calendar permission")
         return await withCheckedContinuation { continuation in
             Task {
                 await self.calendarService.requestCalendarAccess()
                 await MainActor.run {
                     let newStatus = self.calendarService.authorizationStatus
                     var granted = false
-                    if #available(iOS 17.0, *) {
                         switch newStatus {
                         case .fullAccess:
                             self.calendarPermissionStatus = .authorized
                             granted = true
-                            print("SCAN:TEST - Calendar permission granted (fullAccess)")
                         case .denied, .restricted:
                             self.calendarPermissionStatus = .denied
                             granted = false
-                            print("SCAN:TEST - Calendar permission denied")
                         case .writeOnly:
                             self.calendarPermissionStatus = .denied
                             granted = false
-                            print("SCAN:TEST - Calendar permission writeOnly (treating as denied)")
                         case .notDetermined:
                             self.calendarPermissionStatus = .notDetermined
                             granted = false
-                            print("SCAN:TEST - Calendar permission notDetermined")
                         @unknown default:
                             self.calendarPermissionStatus = .notDetermined
                             granted = false
                         }
-                    } else {
-                        switch newStatus {
-                        case .authorized, .fullAccess, .writeOnly:
-                            self.calendarPermissionStatus = .authorized
-                            granted = true
-                            print("SCAN:TEST - Calendar permission granted")
-                        case .denied, .restricted:
-                            self.calendarPermissionStatus = .denied
-                            granted = false
-                            print("SCAN:TEST - Calendar permission denied")
-                        case .notDetermined:
-                            self.calendarPermissionStatus = .notDetermined
-                            granted = false
-                            print("SCAN:TEST - Calendar permission notDetermined")
-                        @unknown default:
-                            self.calendarPermissionStatus = .notDetermined
-                            granted = false
-                        }
-                    }
                     continuation.resume(returning: granted)
                 }
             }
         }
     }
     
-    /// Запускает загрузку данных в зависимости от полученных разрешений
     private func startDataLoading(photoGranted: Bool, contactsGranted: Bool, calendarGranted: Bool) {
-        print("SCAN:TEST - Starting data loading with permissions - Photo: \(photoGranted), Contacts: \(contactsGranted), Calendar: \(calendarGranted)")
-        
-        // Загружаем фото если есть разрешения
         if photoGranted {
-            print("SCAN:TEST - Starting photo scanning")
             mediaCleanerService.resetData()
             mediaCleanerService.scanAllImages()
             mediaCleanerService.scanVideos()
-        } else {
-            print("SCAN:TEST - Photo access denied, skipping photo scan")
         }
         
-        // Загружаем контакты если есть разрешения
         if contactsGranted {
-            print("SCAN:TEST - Starting contacts scanning")
             scanContacts()
-        } else {
-            print("SCAN:TEST - Contacts access denied, skipping contacts scan")
         }
         
-        // Загружаем календарь если есть разрешения
         if calendarGranted {
-            print("SCAN:TEST - Starting calendar scanning")
             scanCalendar()
-        } else {
-            print("SCAN:TEST - Calendar access denied, skipping calendar scan")
         }
-        
-        print("SCAN:TEST - Data loading started for all permitted services")
     }
     
     func scanContacts() {
         // Сначала загружаем локальные контакты
         let localContactsCount = contactsViewModel.getContactsCount()
         
-        // Затем проверяем системные контакты если есть разрешения
         if contactsPermissionStatus == .authorized {
             isContactsLoading = true
             Task {
@@ -284,7 +198,6 @@ final class MainViewModel: ObservableObject {
                 }
                 return count
             } catch {
-                print("Error loading system contacts: \(error)")
                 return 0
             }
         }.value
@@ -303,7 +216,6 @@ final class MainViewModel: ObservableObject {
         }
     }
     
-    // Методы для запроса разрешений
     func requestContactsPermission() {
         contactsPermissionStatus = .loading
         
@@ -316,7 +228,7 @@ final class MainViewModel: ObservableObject {
                 switch newStatus {
                 case .authorized:
                     contactsPermissionStatus = .authorized
-                    scanContacts() // Пересканируем после получения разрешения
+                    scanContacts()
                 case .denied, .restricted:
                     contactsPermissionStatus = .denied
                 default:
@@ -339,7 +251,7 @@ final class MainViewModel: ObservableObject {
                 switch newStatus {
                 case .fullAccess:
                     calendarPermissionStatus = .authorized
-                    scanCalendar() // Пересканируем после получения разрешения
+                    scanCalendar()
                 case .denied, .restricted:
                     calendarPermissionStatus = .denied
                 case .notDetermined:
@@ -353,7 +265,7 @@ final class MainViewModel: ObservableObject {
                 switch newStatus {
                 case .authorized, .fullAccess, .writeOnly:
                     calendarPermissionStatus = .authorized
-                    scanCalendar() // Пересканируем после получения разрешения
+                    scanCalendar()
                 case .denied, .restricted:
                     calendarPermissionStatus = .denied
                 case .notDetermined:
@@ -365,20 +277,13 @@ final class MainViewModel: ObservableObject {
         }
     }
     
-    /// Открывает настройки приложения
     func openAppSettings() {
-        print("SCAN:TEST - Opening app settings")
         guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
-            print("SCAN:TEST - Failed to create settings URL")
             return
         }
         
         if UIApplication.shared.canOpenURL(settingsUrl) {
-            UIApplication.shared.open(settingsUrl) { success in
-                print("SCAN:TEST - Settings opened: \(success)")
-            }
-        } else {
-            print("SCAN:TEST - Cannot open settings URL")
+            UIApplication.shared.open(settingsUrl) { _ in }
         }
     }
     
@@ -387,13 +292,16 @@ final class MainViewModel: ObservableObject {
     }
 
     private func setupBindings() {
-        print("SCAN:TEST - setupBindings started")
-        
         mediaCleanerService.progressPublisher
             .receive(on: RunLoop.main)
             .sink { [weak self] progress in
-                print("SCAN:TEST - Progress received: \(progress.value), self exists: \(self != nil)")
-                self?.progress = progress.value
+                if progress.value >= 1 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self?.progress = progress.value
+                    }
+                } else {
+                    self?.progress = progress.value
+                }
             }
             .store(in: &cancellables)
 
@@ -401,10 +309,9 @@ final class MainViewModel: ObservableObject {
             .debounce(for: .milliseconds(200), scheduler: DispatchQueue.global())
             .receive(on: RunLoop.main)
             .sink { [weak self] megabytes, counts in
-                print("SCAN:TEST - Counts/Megabytes received: total=\(counts.total), self exists: \(self != nil)")
                 self?.counts = counts
                 self?.megabytes = megabytes
-                self?.subtitle = "\(counts.total) files • \(megabytes.total.formatAsFileSize()) will be cleaned"
+                self?.subtitle = "Based on AI's smart scan, we've identified files and data you may want to clean: \(counts.total) items • \(megabytes.total.formatAsFileSize()) can be optimized."
             }
             .store(in: &cancellables)
 
@@ -412,29 +319,22 @@ final class MainViewModel: ObservableObject {
             .debounce(for: .milliseconds(200), scheduler: DispatchQueue.global())
             .receive(on: RunLoop.main)
             .sink { [weak self] previews in
-                print("SCAN:TEST - Previews received, self exists: \(self != nil)")
                 self?.previews = previews
             }
             .store(in: &cancellables)
         
-        // Слушатель изменений количества контактов
         contactsViewModel.$contacts
             .receive(on: RunLoop.main)
             .sink { [weak self] contacts in
-                print("SCAN:TEST - Contacts count received: \(contacts.count), self exists: \(self != nil)")
                 self?.contactsCount = contacts.count
             }
             .store(in: &cancellables)
         
-        // Слушатель изменений событий календаря
         calendarService.$events
             .receive(on: RunLoop.main)
             .sink { [weak self] events in
-                print("SCAN:TEST - Calendar events count received: \(events.count), self exists: \(self != nil)")
                 self?.calendarEventsCount = events.count
             }
             .store(in: &cancellables)
-        
-        print("SCAN:TEST - setupBindings completed, total cancellables: \(cancellables.count)")
     }
 }
