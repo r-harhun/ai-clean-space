@@ -4,7 +4,7 @@ import Contacts
 import ContactsUI
 
 struct AICleanerSafeContactsView: View {
-    @StateObject private var viewModel = SafeContactsViewModel()
+    @StateObject private var viewModel = AICleanerSafeContactsViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var showAddContact = false
@@ -72,7 +72,7 @@ struct AICleanerSafeContactsView: View {
         }
         .sheet(isPresented: $showSystemContactCard) {
             if let contact = selectedContactForSystemCard {
-                SafeContactCardView(contact: contact)
+                AICleanerSafeContactCardView(contact: contact)
             }
         }
         .alert("Delete from Device", isPresented: $showDeleteFromDeviceAlert) {
@@ -469,108 +469,6 @@ struct AICleanerSafeContactsView: View {
                        contact.phoneNumber.lowercased().contains(searchQuery) ||
                        (contact.email?.lowercased().contains(searchQuery) ?? false)
             }.sorted { $0.fullName.localizedCaseInsensitiveCompare($1.fullName) == .orderedAscending }
-        }
-    }
-}
-
-// MARK: - Safe Contacts View Model
-class SafeContactsViewModel: ObservableObject, ContactViewModelProtocol {
-    @Published var contacts: [ContactData] = []
-    @Published var isLoading = false
-    
-    private let persistenceManager = ContactsPersistenceManager.shared
-    
-    // MARK: - CRUD Operations
-    func loadContacts() {
-        isLoading = true
-        
-        Task(priority: .userInitiated) {
-            let loadedContacts = self.persistenceManager.loadContacts()
-            
-            // Автоматически переключает на MainActor
-            self.contacts = loadedContacts
-            self.isLoading = false
-        }
-    }
-    
-    func addContact(_ contact: ContactData) {
-        persistenceManager.addContact(contact)
-        loadContacts()
-    }
-    
-    func updateContact(_ contact: ContactData) {
-        persistenceManager.updateContact(contact)
-        loadContacts()
-    }
-    
-    func deleteContact(_ contact: ContactData) {
-        persistenceManager.deleteContact(withId: contact.id)
-        loadContacts()
-    }
-}
-
-// MARK: - Safe Contact Card View
-struct SafeContactCardView: UIViewControllerRepresentable {
-    let contact: ContactData
-    @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> UINavigationController {
-        // Создаем CNContact из ContactData
-        let cnContact = CNMutableContact()
-        cnContact.givenName = contact.firstName
-        cnContact.familyName = contact.lastName
-        
-        // Добавляем номер телефона
-        if !contact.phoneNumber.isEmpty {
-            let phoneNumber = CNPhoneNumber(stringValue: contact.phoneNumber)
-            let phoneNumberValue = CNLabeledValue(label: CNLabelPhoneNumberMain, value: phoneNumber)
-            cnContact.phoneNumbers = [phoneNumberValue]
-        }
-        
-        // Добавляем email
-        if let email = contact.email, !email.isEmpty {
-            let emailValue = CNLabeledValue(label: CNLabelHome, value: email as NSString)
-            cnContact.emailAddresses = [emailValue]
-        }
-        
-        // Добавляем заметки (если есть)
-        if let notes = contact.notes, !notes.isEmpty {
-            cnContact.note = notes
-        }
-        
-        // Создаем контроллер
-        let contactViewController = CNContactViewController(for: cnContact)
-        contactViewController.allowsEditing = false
-        contactViewController.allowsActions = true
-        
-        // Добавляем кнопку закрытия
-        contactViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .done,
-            target: context.coordinator,
-            action: #selector(Coordinator.dismissController)
-        )
-        
-        let navigationController = UINavigationController(rootViewController: contactViewController)
-        return navigationController
-    }
-    
-    func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
-        // Обновления не требуются
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject {
-        let parent: SafeContactCardView
-        
-        init(_ parent: SafeContactCardView) {
-            self.parent = parent
-        }
-        
-        @objc func dismissController() {
-            parent.dismiss()
         }
     }
 }
