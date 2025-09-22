@@ -12,13 +12,13 @@ struct AICleanerDuplicateContactsView: View {
     @State private var isPerformingMerge = false
     @State private var mergeSuccessMessage: String?
     @State private var showMergeSuccess = false
-    
+    @State private var selectedGroup: [CNContact]?
+
     var body: some View {
         GeometryReader { geometry in
             let scalingFactor = geometry.size.height / 844
             
             ZStack {
-                // New background with a gradient
                 LinearGradient(gradient: Gradient(colors: [CMColor.background, CMColor.backgroundSecondary]), startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea()
                 
@@ -76,7 +76,6 @@ struct AICleanerDuplicateContactsView: View {
                     }
                     .padding(.bottom, 24 * scalingFactor)
                     
-                    // New Content section with a different layout
                     if viewModel.duplicateGroups.isEmpty {
                         VStack(spacing: 16 * scalingFactor) {
                             Spacer()
@@ -96,61 +95,8 @@ struct AICleanerDuplicateContactsView: View {
                         ScrollView {
                             VStack(spacing: 32 * scalingFactor) {
                                 ForEach(Array(viewModel.duplicateGroups.enumerated()), id: \.offset) { index, group in
-                                    VStack(alignment: .leading, spacing: 16 * scalingFactor) {
-                                        HStack {
-                                            Text("Group \(index + 1)")
-                                                .font(.system(size: 18 * scalingFactor, weight: .bold))
-                                                .foregroundColor(CMColor.primary)
-                                            Spacer()
-                                            Button(action: {
-                                                selectedDuplicates.removeAll()
-                                                selectedDuplicates = Set(group.map { $0.identifier })
-                                                showMergeAlert = true
-                                            }) {
-                                                Text("Merge Group")
-                                                    .font(.system(size: 14 * scalingFactor, weight: .medium))
-                                                    .foregroundColor(.white)
-                                                    .padding(.vertical, 8 * scalingFactor)
-                                                    .padding(.horizontal, 16 * scalingFactor)
-                                                    .background(CMColor.primary)
-                                                    .cornerRadius(20 * scalingFactor)
-                                            }
-                                        }
-                                        .padding(.horizontal, 16 * scalingFactor)
-                                        .padding(.top, 16 * scalingFactor)
-                                        
-                                        VStack(spacing: 8 * scalingFactor) {
-                                            ForEach(group, id: \.identifier) { contact in
-                                                HStack(spacing: 16 * scalingFactor) {
-                                                    Image(systemName: "person.circle.fill")
-                                                        .font(.system(size: 44 * scalingFactor))
-                                                        .foregroundColor(CMColor.primary.opacity(0.6))
-                                                    
-                                                    VStack(alignment: .leading, spacing: 4 * scalingFactor) {
-                                                        Text(contact.givenName + " " + contact.familyName)
-                                                            .font(.system(size: 18 * scalingFactor, weight: .medium))
-                                                            .foregroundColor(CMColor.primaryText)
-                                                        Text(contact.phoneNumbers.first?.value.stringValue ?? "No phone number")
-                                                            .font(.system(size: 14 * scalingFactor, weight: .regular))
-                                                            .foregroundColor(CMColor.secondaryText)
-                                                    }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    Image(systemName: "arrow.right")
-                                                        .foregroundColor(CMColor.secondaryText)
-                                                }
-                                                .padding(.horizontal, 16 * scalingFactor)
-                                                .padding(.vertical, 12 * scalingFactor)
-                                                .background(CMColor.backgroundSecondary)
-                                                .cornerRadius(12 * scalingFactor)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal, 20 * scalingFactor)
-                                    .background(CMColor.backgroundSecondary.opacity(0.5))
-                                    .cornerRadius(20 * scalingFactor)
-                                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                                    // Используем новый, исправленный дублированный раздел
+                                    duplicateGroupSection(group: group, groupIndex: index, scalingFactor: scalingFactor, isFirstGroup: index == 0)
                                 }
                             }
                             .padding(.vertical, 24 * scalingFactor)
@@ -161,12 +107,17 @@ struct AICleanerDuplicateContactsView: View {
             }
         }
         .navigationBarHidden(true)
-        // Alerts are also changed
         .alert("Merge Confirmation", isPresented: $showMergeAlert) {
             Button("Yes, Merge", role: .destructive) {
+                // Исправлено: теперь вызываем mergeSelectedContactsInGroup
+                if let group = selectedGroup {
+                    mergeSelectedContactsInGroup(group)
+                }
+            }
+            Button("No, Cancel", role: .cancel) {
+                // Опционально: можно очистить selectedDuplicates при отмене, если нужно
                 selectedDuplicates.removeAll()
             }
-            Button("No, Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to merge these duplicate contacts? This action is permanent.")
         }
@@ -302,69 +253,77 @@ struct AICleanerDuplicateContactsView: View {
                         .fill(CMColor.surface)
                         .shadow(color: .black.opacity(0.05), radius: 2 * scalingFactor, x: 0, y: 1 * scalingFactor)
                 )
-            }
-            
-            HStack {
-                Text("Select contacts to merge")
-                    .font(.system(size: 15 * scalingFactor, weight: .regular))
-                    .foregroundColor(CMColor.secondaryText)
-                
-                Spacer()
-                
-                Button(action: {
+                .onTapGesture {
+                    // При нажатии на заголовок группы, переключаем выбор всех контактов
                     toggleSelectAll(for: group)
-                }) {
-                    Text(selectedInGroup == group.count ? "Deselect all" : "Select all")
-                        .font(.system(size: 15 * scalingFactor, weight: .medium))
-                        .foregroundColor(CMColor.primary)
                 }
-            }
-            .padding(.horizontal, 16 * scalingFactor)
-            
-            VStack(spacing: 8 * scalingFactor) {
-                ForEach(Array(group.enumerated()), id: \.element.identifier) { index, contact in
-                    enhancedDuplicateContactCard(
-                        contact: contact,
-                        isSelected: selectedDuplicates.contains(contact.identifier),
-                        isPrimary: index == 0, // First contact is most complete
-                        scalingFactor: scalingFactor
-                    )
-                }
-            }
-            .padding(.horizontal, 16 * scalingFactor)
-            
-            if selectedInGroup >= 2 {
-                Button(action: {
-                    mergeSelectedContactsInGroup(group)
-                }) {
-                    HStack {
-                        if isPerformingMerge {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "arrow.triangle.merge")
-                                .font(.system(size: 16 * scalingFactor, weight: .medium))
-                        }
-                        
-                        Text(isPerformingMerge ? "Merging..." : "Merge \(selectedInGroup) contacts")
-                            .font(.system(size: 17 * scalingFactor, weight: .semibold))
+                
+                // Заголовок "Select contacts to merge" и кнопка "Select all"
+                HStack {
+                    Text("Select contacts to merge")
+                        .font(.system(size: 15 * scalingFactor, weight: .regular))
+                        .foregroundColor(CMColor.secondaryText)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        toggleSelectAll(for: group)
+                    }) {
+                        Text(selectedInGroup == group.count ? "Deselect all" : "Select all")
+                            .font(.system(size: 15 * scalingFactor, weight: .medium))
+                            .foregroundColor(CMColor.primary)
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48 * scalingFactor)
-                    .background(isPerformingMerge ? CMColor.primary.opacity(0.7) : CMColor.primary)
-                    .cornerRadius(12 * scalingFactor)
                 }
-                .disabled(isPerformingMerge)
-                .animation(.easeInOut(duration: 0.2), value: isPerformingMerge)
                 .padding(.horizontal, 16 * scalingFactor)
-                .padding(.top, 8 * scalingFactor)
+                
+                // Список дубликатов
+                VStack(spacing: 8 * scalingFactor) {
+                    ForEach(Array(group.enumerated()), id: \.element.identifier) { index, contact in
+                        enhancedDuplicateContactCard(
+                            contact: contact,
+                            isSelected: selectedDuplicates.contains(contact.identifier),
+                            isPrimary: index == 0,
+                            scalingFactor: scalingFactor
+                        )
+                    }
+                }
+                .padding(.horizontal, 16 * scalingFactor)
+                
+                // Кнопка для объединения
+                if selectedInGroup >= 2 {
+                    Button(action: {
+                        // Исправлено: теперь при нажатии на кнопку сразу вызываем метод
+                        mergeSelectedContactsInGroup(group)
+                    }) {
+                        HStack {
+                            if isPerformingMerge {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "arrow.triangle.merge")
+                                    .font(.system(size: 16 * scalingFactor, weight: .medium))
+                            }
+                            
+                            Text(isPerformingMerge ? "Merging..." : "Merge \(selectedInGroup) contacts")
+                                .font(.system(size: 17 * scalingFactor, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48 * scalingFactor)
+                        .background(isPerformingMerge ? CMColor.primary.opacity(0.7) : CMColor.primary)
+                        .cornerRadius(12 * scalingFactor)
+                    }
+                    .disabled(isPerformingMerge)
+                    .animation(.easeInOut(duration: 0.2), value: isPerformingMerge)
+                    .padding(.horizontal, 16 * scalingFactor)
+                    .padding(.top, 8 * scalingFactor)
+                }
             }
+            .padding(.vertical, 8 * scalingFactor)
         }
-        .padding(.vertical, 8 * scalingFactor)
     }
-    
+        
     private func enhancedDuplicateContactCard(contact: CNContact, isSelected: Bool, isPrimary: Bool, scalingFactor: CGFloat) -> some View {
         Button(action: {
             toggleSelection(for: contact.identifier)
