@@ -172,9 +172,10 @@ struct SafeStorageView: View {
     }
     
     private func categoryCardsView() -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+        VStack(spacing: 16) {
             ForEach(categories) { category in
-                VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    // Icon
                     Image(systemName: category.icon)
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(category.color)
@@ -182,6 +183,7 @@ struct SafeStorageView: View {
                         .background(category.color.opacity(0.1))
                         .cornerRadius(12)
                     
+                    // Title and subtitle
                     VStack(alignment: .leading, spacing: 4) {
                         Text(category.title)
                             .font(.headline.bold())
@@ -191,19 +193,24 @@ struct SafeStorageView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
-                    .padding(.top, 8)
+                    
+                    Spacer() // Pushes the content to the left
+                    
+                    // Chevron icon
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
                 }
-                .padding()
+                .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.white)
-                .cornerRadius(20)
+                .cornerRadius(16)
                 .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 5)
                 .onTapGesture {
                     if category.title == "Docs" {
                         showDocumentsView = true
                     } else if category.title == "Photos" {
                         showPhotosView = true
-                    } else if category.title == "Video" {
+                    } else if category.title == "Videos" {
                         showVideosView = true
                     } else if category.title == "Contacts" {
                         showContactsView = true
