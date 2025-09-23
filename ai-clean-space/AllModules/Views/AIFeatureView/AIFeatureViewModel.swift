@@ -38,7 +38,7 @@ class AIFeatureViewModel: ObservableObject {
         purchaseService.hasActiveSubscription
     }
     
-    private let mediaCleanerService = MediaCleanerService.shared
+    private let mediaCleanerService = AIMainCleanService.shared
     private let cacheService = AICleanCacheService.shared
     private var cancellables = Set<AnyCancellable>()
     

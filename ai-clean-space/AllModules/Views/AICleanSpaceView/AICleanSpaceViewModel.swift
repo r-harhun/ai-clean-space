@@ -35,7 +35,7 @@ final class AICleanSpaceViewModel: ObservableObject {
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
     private var scanTimer: Timer?
-    private let mediaCleanerService = MediaCleanerService.shared
+    private let mediaCleanerService = AIMainCleanService.shared
     
     // MARK: - Initialization
     
@@ -103,7 +103,7 @@ final class AICleanSpaceViewModel: ObservableObject {
         
     // MARK: - Media Cleaner Methods
     func checkPhotoLibraryPermission() -> PHAuthorizationStatus {
-        return mediaCleanerService.checkAuthStatus()
+        return mediaCleanerService.checkAuthorizationStatus()
     }
     
     func requestPhotoLibraryPermission() {

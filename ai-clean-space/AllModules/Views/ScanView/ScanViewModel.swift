@@ -36,7 +36,7 @@ final class MainViewModel: ObservableObject {
         _videos: nil
     )
     
-    private let mediaCleanerService = MediaCleanerService.shared
+    private let mediaCleanerService = AIMainCleanService.shared
     private let contactsViewModel: AICleanerContactsViewModel
     private let calendarService: CalendarService
 

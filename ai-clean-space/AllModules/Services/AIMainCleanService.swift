@@ -3,71 +3,72 @@ import Photos
 import UIKit
 import Combine
 
-final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
-    static let shared: MediaCleanerService = {
-        print("SCAN:TEST - Creating MediaCleanerService.shared instance")
-        let instance = MediaCleanerService(
-            photoLibrary: PHPhotoLibrary.shared(),
-            imageProcessor: ImageProcessorImpl(),
-            imageManager: CachingImageManager(),
-            cacheService: AICleanCacheService.shared
-        )
-        print("SCAN:TEST - MediaCleanerService.shared instance created")
-        return instance
-    }()
+final class AIMainCleanService: NSObject, PHPhotoLibraryChangeObserver {
+    static let shared = AIMainCleanService(
+        photoLibrary: PHPhotoLibrary.shared(),
+        imageProcessor: ImageProcessorImpl(),
+        imageManager: CachingImageManager(),
+        cacheService: AICleanCacheService.shared
+    )
 
-    private let imageQueue = DispatchQueue(label: "MediaCleanerServiceImageQueue", qos: .userInteractive)
-    private let blurrQueue = DispatchQueue(label: "MediaCleanerServiceBlurrQueue", qos: .userInteractive)
-    private let dupliQueue = DispatchQueue(label: "MediaCleanerServiceDupliQueue", qos: .userInteractive)
-    private let videoQueue = DispatchQueue(label: "MediaCleanerServiceVideoQueue", qos: .userInteractive)
+    private let imageProcessingQueue = DispatchQueue(label: "imageProcessingQueue", qos: .userInteractive)
+    private let blurDetectionQueue = DispatchQueue(label: "blurDetectionQueue", qos: .userInteractive)
+    private let duplicateDetectionQueue = DispatchQueue(label: "duplicateDetectionQueue", qos: .userInteractive)
+    private let videoScanningQueue = DispatchQueue(label: "videoScanningQueue", qos: .userInteractive)
 
     private let photoLibrary: PHPhotoLibrary
     private let cachingImageManager: CachingImageManager
 
-    private var imagesFetchResult: PHFetchResult<PHAsset>?
-    private var videoFetchRsult: PHFetchResult<PHAsset>?
+    private var imageFetchResult: PHFetchResult<PHAsset>?
+    private var videoFetchResult: PHFetchResult<PHAsset>?
 
-    private var similar: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: similar.count, for: .image(.similar))
-        print("SCAN:TEST - Sending counts update: similar=\(similar.count), total=\(counts.total)")
-        countsSubject.send(counts)
-    }}
-    private var duplicates: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: duplicates.count, for: .image(.duplicates))
-        print("SCAN:TEST - Sending counts update: duplicates=\(duplicates.count), total=\(counts.total)")
-        countsSubject.send(counts)
-    }}
-    private var blurred: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: blurred.count, for: .image(.blurred))
-        print("SCAN:TEST - Sending counts update: blurred=\(blurred.count), total=\(counts.total)")
-        countsSubject.send(counts)
-    }}
-    private var screenshots: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: screenshots.count, for: .image(.screenshots))
-        print("SCAN:TEST - Sending counts update: screenshots=\(screenshots.count), total=\(counts.total)")
-        countsSubject.send(counts)
-    }}
-    private var videos: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: videos.count, for: .video)
-        print("SCAN:TEST - Sending counts update: videos=\(videos.count), total=\(counts.total)")
-        countsSubject.send(counts)
-    }}
-    private var audios: Set<AICleanServiceModel> = [] { didSet {
-        counts.set(count: audios.count, for: .audio)
-        countsSubject.send(counts)
-    }}
+    private var similarImages: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: similarImages.count, for: .image(.similar))
+            countsSubject.send(counts)
+        }
+    }
+    private var duplicateImages: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: duplicateImages.count, for: .image(.duplicates))
+            countsSubject.send(counts)
+        }
+    }
+    private var blurredImages: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: blurredImages.count, for: .image(.blurred))
+            countsSubject.send(counts)
+        }
+    }
+    private var screenshotImages: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: screenshotImages.count, for: .image(.screenshots))
+            countsSubject.send(counts)
+        }
+    }
+    private var videoAssets: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: videoAssets.count, for: .video)
+            countsSubject.send(counts)
+        }
+    }
+    private var audioAssets: Set<AICleanServiceModel> = [] {
+        didSet {
+            counts.set(count: audioAssets.count, for: .audio)
+            countsSubject.send(counts)
+        }
+    }
 
-    private let _imageProgress = AICleanServiceProgress.startImages
+    private let imageProgress = AICleanServiceProgress.startImages
 
-    private let _similarPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    private let _blurredPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    private let _duplicatesPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    private let _screenshotsPreview = CurrentValueSubject<UIImage?, Never>(nil)
-    private let _videosPreview = CurrentValueSubject<UIImage?, Never>(nil)
+    private let similarImagePreview = CurrentValueSubject<UIImage?, Never>(nil)
+    private let blurredImagePreview = CurrentValueSubject<UIImage?, Never>(nil)
+    private let duplicateImagePreview = CurrentValueSubject<UIImage?, Never>(nil)
+    private let screenshotImagePreview = CurrentValueSubject<UIImage?, Never>(nil)
+    private let videoPreview = CurrentValueSubject<UIImage?, Never>(nil)
 
     private let imageProcessor: ImageProcessor
     private let cacheService: AICleanCacheService
-
     
     private let progressSubject = CurrentValueSubject<AICleanServiceProgress, Never>(
         AICleanServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false)
@@ -86,39 +87,35 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     )
     
     var progressPublisher: AnyPublisher<AICleanServiceProgress, Never> {
-        print("SCAN:TEST - progressPublisher accessed, current value: \(progressSubject.value.value)")
-        return progressSubject.eraseToAnyPublisher()
+        progressSubject.eraseToAnyPublisher()
     }
     var countsPublisher: AnyPublisher<AICleanServiceCounts<Int>, Never> {
-        print("SCAN:TEST - countsPublisher accessed, current total: \(countsSubject.value.total)")
-        return countsSubject.eraseToAnyPublisher()
+        countsSubject.eraseToAnyPublisher()
     }
     var megabytesPublisher: AnyPublisher<AICleanServiceCounts<Double>, Never> {
-        print("SCAN:TEST - megabytesPublisher accessed, current total: \(megabytesSubject.value.total)")
-        return megabytesSubject.eraseToAnyPublisher()
+        megabytesSubject.eraseToAnyPublisher()
     }
     var previewsPublisher: AnyPublisher<AICleanServicePreviews, Never> {
-        print("SCAN:TEST - previewsPublisher accessed")
-        return previewsSubject.eraseToAnyPublisher()
+        previewsSubject.eraseToAnyPublisher()
     }
     var mediaWasDeletedPublisher: AnyPublisher<AICleanServiceType, Never> {
         mediaWasDeletedSubject.eraseToAnyPublisher()
     }
     
     var similarPreviewPublisher: AnyPublisher<UIImage?, Never> {
-        _similarPreview.eraseToAnyPublisher()
+        similarImagePreview.eraseToAnyPublisher()
     }
     var blurredPreviewPublisher: AnyPublisher<UIImage?, Never> {
-        _blurredPreview.eraseToAnyPublisher()
+        blurredImagePreview.eraseToAnyPublisher()
     }
     var duplicatesPreviewPublisher: AnyPublisher<UIImage?, Never> {
-        _duplicatesPreview.eraseToAnyPublisher()
+        duplicateImagePreview.eraseToAnyPublisher()
     }
     var screenshotsPreviewPublisher: AnyPublisher<UIImage?, Never> {
-        _screenshotsPreview.eraseToAnyPublisher()
+        screenshotImagePreview.eraseToAnyPublisher()
     }
     var videosPreviewPublisher: AnyPublisher<UIImage?, Never> {
-        _videosPreview.eraseToAnyPublisher()
+        videoPreview.eraseToAnyPublisher()
     }
     
     var progress: AICleanServiceProgress { progressSubject.value }
@@ -133,23 +130,19 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         imageManager: CachingImageManager,
         cacheService: AICleanCacheService
     ) {
-        print("SCAN:TEST - MediaCleanerService init started")
         self.photoLibrary = photoLibrary
         self.imageProcessor = imageProcessor
         self.cachingImageManager = imageManager
         self.cacheService = cacheService
         super.init()
         photoLibrary.register(self)
-        print("SCAN:TEST - MediaCleanerService init completed")
-        print("SCAN:TEST - Initial progress value: \(progressSubject.value.value)")
-        print("SCAN:TEST - Initial counts total: \(countsSubject.value.total)")
     }
 
     deinit {
         photoLibrary.unregisterChangeObserver(self)
     }
 
-    func checkAuthStatus() -> PHAuthorizationStatus {
+    func checkAuthorizationStatus() -> PHAuthorizationStatus {
         PHPhotoLibrary.authorizationStatus(for: .readWrite)
     }
 
@@ -160,17 +153,13 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     }
 
     func scanAllImages() {
-        print("SCAN:TEST - MediaCleanerService.scanAllImages() called")
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let imageFetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
-        self.imagesFetchResult = imageFetchResult
+        self.imageFetchResult = imageFetchResult
         let total = imageFetchResult.count
-        print("SCAN:TEST - Found \(total) images to process")
         
-        // Если нет изображений, сразу устанавливаем прогресс 100%
         if total == 0 {
-            print("SCAN:TEST - No images found, setting progress to 100%")
             let completedProgress = AICleanServiceProgress(
                 type: .image,
                 index: 0,
@@ -178,7 +167,6 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                 isFinished: true
             )
             DispatchQueue.main.async {
-                print("SCAN:TEST - Sending completed progress for empty image scan: 1.0")
                 self.progressSubject.send(completedProgress)
             }
             return
@@ -189,44 +177,16 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         duplicatesRequestOptions.deliveryMode = .fastFormat
         duplicatesRequestOptions.resizeMode = .fast
 
-        let imageProcessor = self.imageProcessor
-        let imageManager = self.cachingImageManager
-        let imageQueue = self.imageQueue
-        let dupliQueue = self.dupliQueue
-        let blurrQueue = self.blurrQueue
-        let cacheService = self.cacheService
+        var similarPreviewIndexThreshold = 0
+        var screenshotPreviewIndexThreshold = 0
+        var duplicatesPreviewIndexThreshold = 0
+        var blurredPreviewIndexThreshold = 0
 
-        var similarPreviewIndexThreshold = 0 // similarPreviewIndexThreshold
-        var screenshotPreviewIndexThreshold = 0 // screenshotPreviewIndexThreshold
-        var duplicatesPreviewIndexThreshold = 0 // duplicatesPreviewIndexThreshold
-        var blurredPreviewIndexThreshold = 0 // blurredPreviewIndexThreshold
+        var previousSimilarModel: AICleanServiceModel?
+        var previousDuplicateModel: AICleanServiceModel?
+        var previousDuplicateImage: UIImage?
 
-        func getPreview(
-            _ asset: PHAsset,
-            delivery: PHImageRequestOptionsDeliveryMode = .highQualityFormat,
-            resize: PHImageRequestOptionsResizeMode = .exact,
-            completion: @escaping (UIImage?) -> Void
-        ) {
-            getPhotoPreview(asset, delivery: delivery, resize: resize, completion: completion)
-        }
-        func insertedSimilar(_ model: AICleanServiceModel) -> Bool {
-            similar.insert(model).inserted
-        }
-        func insertedDuplicates(_ model: AICleanServiceModel) -> Bool {
-            duplicates.insert(model).inserted
-        }
-        func insertedBlurred(_ model: AICleanServiceModel) -> Bool {
-            blurred.insert(model).inserted
-        }
-        func insertedScreenshots(_ model: AICleanServiceModel) -> Bool {
-            screenshots.insert(model).inserted
-        }
-
-        var prevSimilarModel: AICleanServiceModel?
-        var prevDuplicateModel: AICleanServiceModel?
-        var prevDuplicateImage: UIImage?
-
-        imageQueue.async {
+        imageProcessingQueue.async {
             imageFetchResult.enumerateObjects { asset, index, _ in
                 let newProgress = AICleanServiceProgress(
                     type: .image,
@@ -235,29 +195,23 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                     isFinished: index + 1 == total
                 )
                 
-                if index % 50 == 0 || index == total - 1 {
-                    print("SCAN:TEST - Processing image \(index + 1)/\(total), progress: \(newProgress.value)")
-                }
-                
                 DispatchQueue.main.async {
-                    print("SCAN:TEST - Sending progress update: \(newProgress.value)")
                     self.progressSubject.send(newProgress)
                 }
-                let commonModel = AICleanServiceModel(imageManager: imageManager, asset: asset, index: index)
+                let commonModel = AICleanServiceModel(imageManager: self.cachingImageManager, asset: asset, index: index)
 
                 // MARK: - Finding duplicates
-
-                if let (isDuplicate, equality) = cacheService.getDuplicate(id: commonModel.asset.localIdentifier) {
+                if let (isDuplicate, equality) = self.cacheService.getDuplicate(id: commonModel.asset.localIdentifier) {
                     if isDuplicate {
                         commonModel.equality = equality
-                        if insertedDuplicates(commonModel) {
+                        if self.insertDuplicate(commonModel) {
                             self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.duplicates))
                         }
-                        if self._duplicatesPreview.value == nil || index > duplicatesPreviewIndexThreshold || index == total - 1 {
+                        if self.duplicateImagePreview.value == nil || index > duplicatesPreviewIndexThreshold || index == total - 1 {
                             duplicatesPreviewIndexThreshold = index + total / 20
-                            getPreview(
+                            self.getPhotoPreview(
                                 asset,
-                                delivery: self._duplicatesPreview.value == nil ? .opportunistic : .highQualityFormat,
+                                delivery: self.duplicateImagePreview.value == nil ? .opportunistic : .highQualityFormat,
                                 resize: .fast
                             ) { image in
                                 if let image = image {
@@ -267,42 +221,42 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                         }
                     }
                 } else {
-                    imageManager.requestImage(
+                    self.cachingImageManager.requestImage(
                         for: asset,
                         targetSize: duplicatesSize,
                         contentMode: .aspectFill,
                         options: duplicatesRequestOptions
                     ) { image, options in
-                        dupliQueue.async {
+                        self.duplicateDetectionQueue.async {
                             if let image = image {
                                 if
-                                    let prevDuplicateModel = prevDuplicateModel,
-                                    let prevData = prevDuplicateImage?.pngData(),
+                                    let prevDuplicateModel = previousDuplicateModel,
+                                    let prevData = previousDuplicateImage?.pngData(),
                                     let curData = image.pngData(),
                                     prevData == curData
                                 {
                                     commonModel.equality = prevDuplicateModel.equality
-                                    cacheService.setDuplicate(
+                                    self.cacheService.setDuplicate(
                                         id: commonModel.asset.localIdentifier,
                                         value: true,
                                         equality: prevDuplicateModel.equality
                                     )
-                                    cacheService.setDuplicate(
+                                    self.cacheService.setDuplicate(
                                         id: prevDuplicateModel.asset.localIdentifier,
                                         value: true,
                                         equality: prevDuplicateModel.equality
                                     )
-                                    if insertedDuplicates(prevDuplicateModel) {
+                                    if self.insertDuplicate(prevDuplicateModel) {
                                         self.addMegabytes(count: prevDuplicateModel.asset.fakeSize, to: .image(.duplicates))
                                     }
-                                    if insertedDuplicates(commonModel) {
+                                    if self.insertDuplicate(commonModel) {
                                         self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.duplicates))
                                     }
-                                    if self._duplicatesPreview.value == nil || index > duplicatesPreviewIndexThreshold || index == total - 1 {
+                                    if self.duplicateImagePreview.value == nil || index > duplicatesPreviewIndexThreshold || index == total - 1 {
                                         duplicatesPreviewIndexThreshold = index + total / 20
-                                        getPreview(
+                                        self.getPhotoPreview(
                                             asset,
-                                            delivery: self._duplicatesPreview.value == nil ? .opportunistic : .highQualityFormat,
+                                            delivery: self.duplicateImagePreview.value == nil ? .opportunistic : .highQualityFormat,
                                             resize: .fast
                                         ) { image in
                                             if let image = image {
@@ -312,9 +266,9 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                                     }
                                 } else {
                                     commonModel.equality = commonModel.asset.creationDate?.timeIntervalSince1970 ?? 0
-                                    if let prevDuplicateModel = prevDuplicateModel {
-                                        if cacheService.getDuplicate(id: prevDuplicateModel.asset.localIdentifier) == nil {
-                                            cacheService.setDuplicate(
+                                    if let prevDuplicateModel = previousDuplicateModel {
+                                        if self.cacheService.getDuplicate(id: prevDuplicateModel.asset.localIdentifier) == nil {
+                                            self.cacheService.setDuplicate(
                                                 id: prevDuplicateModel.asset.localIdentifier,
                                                 value: false,
                                                 equality: prevDuplicateModel.asset.creationDate?.timeIntervalSince1970 ?? 0
@@ -322,34 +276,33 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                                         }
                                     }
                                 }
-                                prevDuplicateModel = commonModel
-                                prevDuplicateImage = image
+                                previousDuplicateModel = commonModel
+                                previousDuplicateImage = image
                             }
                         }
                     }
                 }
 
                 // MARK: - Similar and screenshots
-
-                if let prevModel = prevSimilarModel {
+                if let previousModel = previousSimilarModel {
                     if
-                        let location1 = prevModel.asset.location,
+                        let location1 = previousModel.asset.location,
                         let location2 = asset.location,
-                        let date1 = prevModel.asset.creationDate,
+                        let date1 = previousModel.asset.creationDate,
                         let date2 = asset.creationDate,
                         abs(date2.timeIntervalSince1970 - date1.timeIntervalSince1970) < 5,
                         location1.distance(from: location2) < 1
                     {
-                        commonModel.similarity = prevModel.similarity
-                        if insertedSimilar(prevModel) {
-                            self.addMegabytes(count: prevModel.asset.fakeSize, to: .image(.similar))
+                        commonModel.similarity = previousModel.similarity
+                        if self.insertSimilar(previousModel) {
+                            self.addMegabytes(count: previousModel.asset.fakeSize, to: .image(.similar))
                         }
-                        if insertedSimilar(commonModel) {
+                        if self.insertSimilar(commonModel) {
                             self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.similar))
                         }
-                        if self._similarPreview.value == nil || index > similarPreviewIndexThreshold || index == total - 1 {
+                        if self.similarImagePreview.value == nil || index > similarPreviewIndexThreshold || index == total - 1 {
                             similarPreviewIndexThreshold = index + total / 20
-                            getPreview(asset, resize: .fast) { image in
+                            self.getPhotoPreview(asset, resize: .fast) { image in
                                 if let image = image {
                                     self.updatePreview(image: image, for: .image(.similar))
                                 }
@@ -359,15 +312,15 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                         commonModel.similarity = index
                     }
                 }
-                prevSimilarModel = commonModel
+                previousSimilarModel = commonModel
 
                 if asset.mediaSubtypes.contains(.photoScreenshot) {
-                    if insertedScreenshots(commonModel) {
+                    if self.insertScreenshot(commonModel) {
                         self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.screenshots))
                     }
-                    if self._screenshotsPreview.value == nil || index > screenshotPreviewIndexThreshold || index == total - 1 {
+                    if self.screenshotImagePreview.value == nil || index > screenshotPreviewIndexThreshold || index == total - 1 {
                         screenshotPreviewIndexThreshold = index + total / 20
-                        getPreview(asset, resize: .fast) { image in
+                        self.getPhotoPreview(asset, resize: .fast) { image in
                             if let image = image {
                                 self.updatePreview(image: image, for: .image(.screenshots))
                             }
@@ -376,15 +329,14 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                 }
 
                 // MARK: - Detecting blurred
-
-                if let isBlurred = cacheService.getBlurred(id: commonModel.asset.localIdentifier) {
+                if let isBlurred = self.cacheService.getBlurred(id: commonModel.asset.localIdentifier) {
                     if isBlurred {
-                        if insertedBlurred(commonModel) {
+                        if self.insertBlurred(commonModel) {
                             self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.blurred))
                         }
-                        if self._blurredPreview.value == nil || index > blurredPreviewIndexThreshold || index == total - 1 {
+                        if self.blurredImagePreview.value == nil || index > blurredPreviewIndexThreshold || index == total - 1 {
                             blurredPreviewIndexThreshold = index + total / 20
-                            getPreview(commonModel.asset, resize: .fast) { image in
+                            self.getPhotoPreview(commonModel.asset, resize: .fast) { image in
                                 if let image = image {
                                     self.updatePreview(image: image, for: .image(.blurred))
                                 }
@@ -392,45 +344,33 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
                         }
                     }
                 } else {
-                        getPreview(commonModel.asset) { image in
-                            blurrQueue.async {
-                                    if let image = image {
-                                        if imageProcessor.isBlurry(image) {
-                                            if insertedBlurred(commonModel) {
-                                                self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.blurred))
-                                            }
-                                            self.updatePreview(image: image, for: .image(.blurred))
-                                            cacheService.setBlurred(id: asset.localIdentifier, value: true)
-                                        } else {
-                                            cacheService.setBlurred(id: asset.localIdentifier, value: false)
-                                        }
+                    self.getPhotoPreview(commonModel.asset) { image in
+                        self.blurDetectionQueue.async {
+                            if let image = image {
+                                if self.imageProcessor.isBlurry(image) {
+                                    if self.insertBlurred(commonModel) {
+                                        self.addMegabytes(count: commonModel.asset.fakeSize, to: .image(.blurred))
+                                    }
+                                    self.updatePreview(image: image, for: .image(.blurred))
+                                    self.cacheService.setBlurred(id: asset.localIdentifier, value: true)
+                                } else {
+                                    self.cacheService.setBlurred(id: asset.localIdentifier, value: false)
                                 }
                             }
                         }
+                    }
                 }
             }
-        }
-
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-            print("TEST: similar = \(self.similar.count)")
-            print("TEST: duplicates = \(self.duplicates.count)")
-            print("TEST: blurred = \(self.blurred.count)")
-            print("TEST: screenshots = \(self.screenshots.count)")
         }
     }
 
     func scanVideos() {
-        print("SCAN:TEST - MediaCleanerService.scanVideos() called")
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let videoFetchResult = PHAsset.fetchAssets(with: .video, options: fetchOptions)
-        self.videoFetchRsult = videoFetchResult
-        print("SCAN:TEST - Found \(videoFetchResult.count) videos to process")
+        self.videoFetchResult = videoFetchResult
         
-        // Если нет видео, это нормально - видео сканирование не влияет на основной прогресс
         if videoFetchResult.count == 0 {
-            print("SCAN:TEST - No videos found, this is normal")
             return
         }
 
@@ -451,21 +391,14 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
             return out
         }()
 
-        let imageManager = self.cachingImageManager
-//        let megabytes = self.megabytes
-        let _ = self._videosPreview
-
-        func insertedVideo(_ model: AICleanServiceModel) -> Bool {
-            videos.insert(model).inserted
-        }
-        videoQueue.async {
+        videoScanningQueue.async {
             videoFetchResult.enumerateObjects { asset, index, _ in
-                let model = AICleanServiceModel(imageManager: imageManager, asset: asset, index: index)
-                if insertedVideo(model) {
+                let model = AICleanServiceModel(imageManager: self.cachingImageManager, asset: asset, index: index)
+                if self.insertVideo(model) {
                     self.addMegabytes(count: model.asset.fakeSize, to: .video)
                 }
                 if previewIndicies.contains(index) {
-                    imageManager.requestImage(
+                    self.cachingImageManager.requestImage(
                         for: asset,
                         targetSize: previewSize,
                         contentMode: .aspectFill,
@@ -481,49 +414,46 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     }
 
     func resetData() {
-        print("SCAN:TEST - Resetting all data before new scan.")
-        // Сброс всех Subjects к их начальным значениям
         progressSubject.send(AICleanServiceProgress(type: .image(.similar), index: 1, value: 0, isFinished: false))
         countsSubject.send(AICleanServiceCounts<Int>())
         megabytesSubject.send(AICleanServiceCounts<Double>())
         previewsSubject.send(AICleanServicePreviews(_similar: nil, _duplicates: nil, _blurred: nil, _screenshots: nil, _videos: nil))
         
-        // Также сбросьте все ваши локальные Set<MediaCleanerServiceModel>
-        similar.removeAll()
-        duplicates.removeAll()
-        blurred.removeAll()
-        screenshots.removeAll()
-        videos.removeAll()
+        similarImages.removeAll()
+        duplicateImages.removeAll()
+        blurredImages.removeAll()
+        screenshotImages.removeAll()
+        videoAssets.removeAll()
     }
     
     func getMedia(_ type: AICleanServiceType) -> [AICleanServiceSection] {
-        let arr: [AICleanServiceSection] = {
+        let sections: [AICleanServiceSection] = {
             switch type {
             case .image(let imageType):
                 switch imageType {
                 case .duplicates:
-                    if duplicates.isEmpty { return [] }
-                    return duplicates.equalitySections
+                    if duplicateImages.isEmpty { return [] }
+                    return duplicateImages.equalitySections
                 case .similar:
-                    if similar.isEmpty { return [] }
-                    return similar.similaritySections
+                    if similarImages.isEmpty { return [] }
+                    return similarImages.similaritySections
                 case .screenshots:
-                    if screenshots.isEmpty { return [] }
-                    return screenshots.dateSections
+                    if screenshotImages.isEmpty { return [] }
+                    return screenshotImages.dateSections
                 case .blurred:
-                    if blurred.isEmpty { return [] }
-                    return blurred.dateSections
+                    if blurredImages.isEmpty { return [] }
+                    return blurredImages.dateSections
                 }
             case .video:
-                if videos.isEmpty { return [] }
-                return videos.dateSections
+                if videoAssets.isEmpty { return [] }
+                return videoAssets.dateSections
             case .audio:
-                if audios.isEmpty { return [] }
-                return audios.dateSections
+                if audioAssets.isEmpty { return [] }
+                return audioAssets.dateSections
             }
         }()
 
-        return arr
+        return sections
     }
 
     func delete(assets: Set<PHAsset>, completion: @escaping (Bool) -> Void) {
@@ -534,18 +464,14 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
         })
     }
 
-    // Реализация нового метода
     func deleteAssets(localIdentifiers: [String], completion: @escaping (Result<[String], Error>) -> Void) {
         let assetsToDelete = PHAsset.fetchAssets(withLocalIdentifiers: localIdentifiers, options: nil)
         
-        // Преобразуем PHFetchResult в Swift массив.
         let assetsArray = assetsToDelete.objects(at: IndexSet(0..<assetsToDelete.count))
         
-        // Явно преобразуем Swift массив в NSArray для API Photos Framework.
         let assetsToDeleteAsNSArray = assetsArray as NSArray
         
         photoLibrary.performChanges({
-            // Используем преобразованный NSArray для метода удаления.
             PHAssetChangeRequest.deleteAssets(assetsToDeleteAsNSArray)
         }) { success, error in
             if success {
@@ -562,49 +488,48 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     }
     
     // MARK: - PHPhotoLibraryChangeObserver conformance
-
     func photoLibraryDidChange(_ changeInstance: PHChange) {
-        if let imageFetch = imagesFetchResult, let info = changeInstance.changeDetails(for: imageFetch) {
+        if let imageFetch = imageFetchResult, let info = changeInstance.changeDetails(for: imageFetch) {
             if !info.insertedObjects.isEmpty {
                 cacheService.deleteAllDuplicates()
             }
             for object in info.removedObjects {
-                if let first = similar.first(where: { $0.asset.isEqual(object) }) {
-                    if similar.remove(first) != nil {
+                if let first = similarImages.first(where: { $0.asset.isEqual(object) }) {
+                    if similarImages.remove(first) != nil {
                         cacheService.deleteSize(id: first.asset.localIdentifier)
                         mediaWasDeletedSubject.send(.image(.similar))
                     }
                 }
-                if let first = duplicates.first(where: { $0.asset.isEqual(object) }) {
-                    if duplicates.remove(first) != nil {
+                if let first = duplicateImages.first(where: { $0.asset.isEqual(object) }) {
+                    if duplicateImages.remove(first) != nil {
                         cacheService.deleteDuplicate(id: first.asset.localIdentifier)
-                        let rest = duplicates.compactMap { $0.equality == first.equality ? $0 : nil }
+                        let rest = duplicateImages.compactMap { $0.equality == first.equality ? $0 : nil }
                         if rest.count == 1 {
                             let another = rest.first!
-                            duplicates.remove(another)
+                            duplicateImages.remove(another)
                             cacheService.deleteDuplicate(id: another.asset.localIdentifier)
                         }
                         mediaWasDeletedSubject.send(.image(.duplicates))
                     }
                 }
-                if let first = blurred.first(where: { $0.asset.isEqual(object) }) {
-                    if blurred.remove(first) != nil {
+                if let first = blurredImages.first(where: { $0.asset.isEqual(object) }) {
+                    if blurredImages.remove(first) != nil {
                         cacheService.deleteBlurred(id: first.asset.localIdentifier)
                         mediaWasDeletedSubject.send(.image(.blurred))
                     }
                 }
-                if let first = screenshots.first(where: { $0.asset.isEqual(object) }) {
-                    if screenshots.remove(first) != nil {
+                if let first = screenshotImages.first(where: { $0.asset.isEqual(object) }) {
+                    if screenshotImages.remove(first) != nil {
                         cacheService.deleteSize(id: first.asset.localIdentifier)
                         mediaWasDeletedSubject.send(.image(.screenshots))
                     }
                 }
             }
         }
-        if let videoFetch = videoFetchRsult, let info = changeInstance.changeDetails(for: videoFetch) {
+        if let videoFetch = videoFetchResult, let info = changeInstance.changeDetails(for: videoFetch) {
             for object in info.removedObjects {
-                if let first = videos.first(where: { $0.asset.isEqual(object) }) {
-                    if videos.remove(first) != nil {
+                if let first = videoAssets.first(where: { $0.asset.isEqual(object) }) {
+                    if videoAssets.remove(first) != nil {
                         cacheService.deleteSize(id: first.asset.localIdentifier)
                         mediaWasDeletedSubject.send(.video)
                     }
@@ -614,14 +539,34 @@ final class MediaCleanerService: NSObject, PHPhotoLibraryChangeObserver {
     }
 }
 
-extension MediaCleanerService {
-    private func addMegabytes(count: Double, to type: AICleanServiceType) {
+private extension AIMainCleanService {
+    func insertSimilar(_ model: AICleanServiceModel) -> Bool {
+        similarImages.insert(model).inserted
+    }
+    
+    func insertDuplicate(_ model: AICleanServiceModel) -> Bool {
+        duplicateImages.insert(model).inserted
+    }
+    
+    func insertBlurred(_ model: AICleanServiceModel) -> Bool {
+        blurredImages.insert(model).inserted
+    }
+    
+    func insertScreenshot(_ model: AICleanServiceModel) -> Bool {
+        screenshotImages.insert(model).inserted
+    }
+    
+    func insertVideo(_ model: AICleanServiceModel) -> Bool {
+        videoAssets.insert(model).inserted
+    }
+
+    func addMegabytes(count: Double, to type: AICleanServiceType) {
         let currentMegabytes = megabytesSubject.value
         currentMegabytes.add(count: count, to: type)
         megabytesSubject.send(currentMegabytes)
     }
     
-    private func updatePreview(image: UIImage, for type: AICleanServiceType) {
+    func updatePreview(image: UIImage, for type: AICleanServiceType) {
         let currentPreviews = previewsSubject.value
         let newPreviews: AICleanServicePreviews
         
@@ -629,7 +574,7 @@ extension MediaCleanerService {
         case .image(let imageType):
             switch imageType {
             case .similar:
-                _similarPreview.send(image)
+                similarImagePreview.send(image)
                 newPreviews = AICleanServicePreviews(
                     _similar: image,
                     _duplicates: currentPreviews.duplicates,
@@ -638,7 +583,7 @@ extension MediaCleanerService {
                     _videos: currentPreviews.videos
                 )
             case .duplicates:
-                _duplicatesPreview.send(image)
+                duplicateImagePreview.send(image)
                 newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: image,
@@ -647,7 +592,7 @@ extension MediaCleanerService {
                     _videos: currentPreviews.videos
                 )
             case .blurred:
-                _blurredPreview.send(image)
+                blurredImagePreview.send(image)
                 newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: currentPreviews.duplicates,
@@ -656,7 +601,7 @@ extension MediaCleanerService {
                     _videos: currentPreviews.videos
                 )
             case .screenshots:
-                _screenshotsPreview.send(image)
+                screenshotImagePreview.send(image)
                 newPreviews = AICleanServicePreviews(
                     _similar: currentPreviews.similar,
                     _duplicates: currentPreviews.duplicates,
@@ -666,7 +611,7 @@ extension MediaCleanerService {
                 )
             }
         case .video:
-            _videosPreview.send(image)
+            videoPreview.send(image)
             newPreviews = AICleanServicePreviews(
                 _similar: currentPreviews.similar,
                 _duplicates: currentPreviews.duplicates,
@@ -675,40 +620,23 @@ extension MediaCleanerService {
                 _videos: image
             )
         case .audio:
-            // Audio doesn't have preview images
             return
         }
-        
         previewsSubject.send(newPreviews)
     }
-
-    private func getPhotoPreview(
+    
+    func getPhotoPreview(
         _ asset: PHAsset,
         delivery: PHImageRequestOptionsDeliveryMode = .highQualityFormat,
         resize: PHImageRequestOptionsResizeMode = .exact,
         completion: @escaping (UIImage?) -> Void
     ) {
-        let previewSize = CGSize(width: 130, height: 130)
-        let previewRequestOptions = PHImageRequestOptions()
-        previewRequestOptions.deliveryMode = delivery
-        previewRequestOptions.resizeMode = resize
-        cachingImageManager.requestImage(
-            for: asset,
-            targetSize: previewSize,
-            contentMode: .aspectFill,
-            options: previewRequestOptions
-        ) { image, _ in
+        let requestOptions = PHImageRequestOptions()
+        requestOptions.deliveryMode = delivery
+        requestOptions.resizeMode = resize
+        let targetSize = CGSize(width: asset.pixelWidth, height: asset.pixelHeight)
+        cachingImageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFit, options: requestOptions) { image, _ in
             completion(image)
-        }
-    }
-
-    private func getSize(_ asset: PHAsset, completion: @escaping (Double) -> Void) {
-        if let size = cacheService.getSize(id: asset.localIdentifier) {
-            completion(size)
-        } else {
-            let size = asset.megabytesOnDisk
-            completion(size)
-            cacheService.setSize(id: asset.localIdentifier, value: size)
         }
     }
 }
