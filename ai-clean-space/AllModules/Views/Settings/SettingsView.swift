@@ -164,9 +164,6 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Custom Reusable Rows
-
-// Строка с переключателем
 private struct SecurityToggleRow: View {
     var title: String
     @Binding var isOn: Bool
@@ -186,7 +183,6 @@ private struct SecurityToggleRow: View {
     }
 }
 
-// Навигационная строка для раздела "Security"
 private struct SecurityNavigationRow: View {
     var title: String
     var action: () -> Void
@@ -207,7 +203,6 @@ private struct SecurityNavigationRow: View {
     }
 }
 
-// Навигационная строка для раздела "About"
 private struct AboutNavigationRow: View {
     var title: String
     var action: () -> Void
@@ -225,12 +220,5 @@ private struct AboutNavigationRow: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 15)
-    }
-}
-
-// Preview
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView(isPaywallPresented: .constant(false))
     }
 }

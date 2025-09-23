@@ -13,38 +13,10 @@ enum ResurcesUrlsConstants {
 
 final class SettingsViewModel: ObservableObject {
     
-    @Published var isPasscodeEnabledInApp: Bool = false {
-        didSet {
-            // MARK: - Обработка изменения состояния переключателя
-            print("isPasscodeEnabledInApp changed to: \(isPasscodeEnabledInApp)")
-        }
-    }
-    
-    @Published var isFaceIDInAppEnabled: Bool = false {
-        didSet {
-            // MARK: - Обработка изменения состояния переключателя
-            print("isFaceIDInAppEnabled changed to: \(isFaceIDInAppEnabled)")
-        }
-    }
-    
-    @Published var isSecretSpacePasscodeEnabled: Bool = true {
-        didSet {
-            // MARK: - Обработка изменения состояния переключателя
-            print("isSecretSpacePasscodeEnabled changed to: \(isSecretSpacePasscodeEnabled)")
-        }
-    }
-    
-    @Published var isSecretSpaceFaceIDEnabled: Bool = true {
-        didSet {
-            // MARK: - Обработка изменения состояния переключателя
-            print("isSecretSpaceFaceIDEnabled changed to: \(isSecretSpaceFaceIDEnabled)")
-        }
-    }
-    
-    init() {
-        // Здесь можно загрузить начальные значения из UserDefaults
-        // Например: isPasscodeEnabledInApp = UserDefaults.standard.bool(forKey: "passcodeEnabled")
-    }
+    @Published var isPasscodeEnabledInApp: Bool = false
+    @Published var isFaceIDInAppEnabled: Bool = false
+    @Published var isSecretSpacePasscodeEnabled: Bool = true
+    @Published var isSecretSpaceFaceIDEnabled: Bool = true
     
     func rateUsTapped() {
         if let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
@@ -63,9 +35,8 @@ final class SettingsViewModel: ObservableObject {
     }
     
     func sendFeedbackTapped() {
-        // MARK: - Открытие почтового клиента с предзаполненным письмом
         let subject = "Feedback"
-        let body = "" // Можно добавить текст по умолчанию
+        let body = ""
         let mailtoString = "mailto:\(ResurcesUrlsConstants.feedBackEmail)?subject=\(subject)&body=\(body)"
         
         if let mailtoUrl = URL(string: mailtoString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") {

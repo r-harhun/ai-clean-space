@@ -6,7 +6,7 @@ import os.log
 final class AICleanCacheService {
     static let shared: AICleanCacheService = {
         print("SWIPE:DB:TEST - Creating MediaCleanerCacheServiceImpl.shared singleton")
-        let instance = AICleanCacheService(storagePerformer: StoragePerformerImpl())
+        let instance = AICleanCacheService(storagePerformer: StoragePerformer())
         print("SWIPE:DB:TEST - MediaCleanerCacheServiceImpl.shared singleton created")
         return instance
     }()
