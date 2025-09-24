@@ -9,35 +9,35 @@ final class AICalendarAgent: ObservableObject {
         static let spamMarker = "[MARKED_AS_SPAM]"
         static let backupIdentifierSeparator = "_"
     }
-        
+    
     @Published var events: [AICalendarSystemEvent] = []
     @Published var isLoading = false
     @Published var authorizationStatus: EKAuthorizationStatus = .notDetermined
     @Published var errorMessage: String?
     
-    private let eventStore = EKEventStore()
-    private var cancellables = Set<AnyCancellable>()
-    private let whitelistCalendarService = WhitelistCalendarService()
-        
+    private let calendarEventStore = EKEventStore()
+    private var subscriptionCancellables = Set<AnyCancellable>()
+    private let whitelistedCalendarService = WhitelistCalendarService()
+    
     init() {
-        checkAuthorizationStatus()
-        setupWhitelistObserver()
+        checkCurrentAuthorizationStatus()
+        setupWhitelistEventObserver()
     }
-        
+    
     func requestCalendarAccess() async {
         let accessType = EKEntityType.event
         let isAccessGranted: Bool
         
         do {
             if #available(iOS 17.0, *) {
-                isAccessGranted = try await eventStore.requestFullAccessToEvents()
+                isAccessGranted = try await calendarEventStore.requestFullAccessToEvents()
             } else {
-                isAccessGranted = try await eventStore.requestAccess(to: accessType)
+                isAccessGranted = try await calendarEventStore.requestAccess(to: accessType)
             }
             
-            await handleAccessResult(granted: isAccessGranted)
+            await handleAccessRequestResult(granted: isAccessGranted)
         } catch {
-            await handleAccessError(error)
+            await handleAccessRequestError(error)
         }
     }
     
@@ -52,10 +52,10 @@ final class AICalendarAgent: ObservableObject {
         let start = startDate ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
         let end = endDate ?? Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
         
-        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
-        let ekEvents = eventStore.events(matching: predicate)
+        let predicate = calendarEventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
+        let ekEvents = calendarEventStore.events(matching: predicate)
         
-        let whitelistedIdentifiers = whitelistCalendarService.getWhitelistedEventIdentifiers()
+        let whitelistedIdentifiers = whitelistedCalendarService.getWhitelistedEventIdentifiers()
         
         let systemEvents = ekEvents.map {
             let compositeId = "\($0.eventIdentifier ?? "")_\($0.startDate.timeIntervalSince1970)"
@@ -65,13 +65,13 @@ final class AICalendarAgent: ObservableObject {
         
         events = systemEvents
         isLoading = false
-        updateEventsWhitelistStatus()
+        updateEventsSafelistStatus()
     }
     
     func deleteEvent(_ event: AICalendarSystemEvent) async -> AICalendarEventDeletionResult {
         guard canAccessCalendar else { return .failed(.noPermission) }
         
-        guard let ekEvent = eventStore.event(withIdentifier: event.eventIdentifier) else {
+        guard let ekEvent = calendarEventStore.event(withIdentifier: event.eventIdentifier) else {
             return .failed(.eventNotFound)
         }
         
@@ -80,7 +80,7 @@ final class AICalendarAgent: ObservableObject {
         }
         
         do {
-            try eventStore.remove(ekEvent, span: .thisEvent)
+            try calendarEventStore.remove(ekEvent, span: .thisEvent)
             events.removeAll { $0.id == event.id }
             return .success
         } catch {
@@ -110,13 +110,13 @@ final class AICalendarAgent: ObservableObject {
     }
     
     func markAsSpam(_ event: AICalendarSystemEvent) async -> Bool {
-        guard canAccessCalendar, let ekEvent = eventStore.event(withIdentifier: event.eventIdentifier) else {
+        guard canAccessCalendar, let ekEvent = calendarEventStore.event(withIdentifier: event.eventIdentifier) else {
             return false
         }
         
         do {
             ekEvent.notes = (ekEvent.notes ?? "") + "\n\(Constants.spamMarker)"
-            try eventStore.save(ekEvent, span: .thisEvent)
+            try calendarEventStore.save(ekEvent, span: .thisEvent)
             
             if let index = events.firstIndex(where: { $0.id == event.id }) {
                 events[index].isMarkedAsSpam = true
@@ -129,13 +129,13 @@ final class AICalendarAgent: ObservableObject {
     }
     
     func addToWhiteList(_ event: AICalendarSystemEvent) {
-        whitelistCalendarService.addToWhitelist(event)
-        updateEventsWhitelistStatus()
+        whitelistedCalendarService.addToWhitelist(event)
+        updateEventsSafelistStatus()
     }
     
     func removeFromWhiteList(_ event: AICalendarSystemEvent) {
-        whitelistCalendarService.removeFromWhitelist(event)
-        updateEventsWhitelistStatus()
+        whitelistedCalendarService.removeFromWhitelist(event)
+        updateEventsSafelistStatus()
     }
     
     func getEventsStatistics() -> EventsAICalendarStatistics {
@@ -149,7 +149,8 @@ final class AICalendarAgent: ObservableObject {
             regular: events.count - spamCount - whitelistedCount
         )
     }
-        
+    
+    // Переименованные приватные функции и переменная
     private var canAccessCalendar: Bool {
         if #available(iOS 17.0, *) {
             return authorizationStatus == .fullAccess
@@ -158,25 +159,25 @@ final class AICalendarAgent: ObservableObject {
         }
     }
     
-    private func checkAuthorizationStatus() {
+    private func checkCurrentAuthorizationStatus() {
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)
         if canAccessCalendar {
             Task { await loadEvents() }
         }
     }
     
-    private func setupWhitelistObserver() {
-        whitelistCalendarService.$whitelistedEvents
+    private func setupWhitelistEventObserver() {
+        whitelistedCalendarService.$whitelistedEvents
             .sink { [weak self] _ in
                 Task { @MainActor in
-                    self?.updateEventsWhitelistStatus()
+                    self?.updateEventsSafelistStatus()
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &subscriptionCancellables)
     }
     
-    private func updateEventsWhitelistStatus() {
-        let whitelistedIdentifiers = whitelistCalendarService.getWhitelistedEventIdentifiers()
+    private func updateEventsSafelistStatus() {
+        let whitelistedIdentifiers = whitelistedCalendarService.getWhitelistedEventIdentifiers()
         
         for index in events.indices {
             let compositeIdentifier = events[index].eventIdentifier
@@ -192,7 +193,7 @@ final class AICalendarAgent: ObservableObject {
         }
     }
     
-    private func handleAccessResult(granted: Bool) async {
+    private func handleAccessRequestResult(granted: Bool) async {
         if #available(iOS 17.0, *) {
             authorizationStatus = granted ? .fullAccess : .denied
             if granted {
@@ -201,7 +202,7 @@ final class AICalendarAgent: ObservableObject {
         }
     }
     
-    private func handleAccessError(_ error: Error) async {
+    private func handleAccessRequestError(_ error: Error) async {
         errorMessage = "Failed to request calendar access: \(error.localizedDescription)"
         authorizationStatus = .denied
     }
