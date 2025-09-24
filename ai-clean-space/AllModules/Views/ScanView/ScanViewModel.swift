@@ -38,7 +38,7 @@ final class MainViewModel: ObservableObject {
     
     private let mediaCleanerService = AIMainCleanService.shared
     private let contactsViewModel: AICleanerContactsViewModel
-    private let calendarService: CalendarService
+    private let calendarService: AICalendarAgent
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -50,7 +50,7 @@ final class MainViewModel: ObservableObject {
     
     init() {
         self.contactsViewModel = AICleanerContactsViewModel()
-        self.calendarService = CalendarService()
+        self.calendarService = AICalendarAgent()
         setupBindings()
         checkInitialPermissions()
     }

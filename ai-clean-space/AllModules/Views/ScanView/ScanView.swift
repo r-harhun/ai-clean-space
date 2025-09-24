@@ -112,7 +112,7 @@ struct MainView: View {
                 case .contacts:
                     AICleanerContactsView()
                 case .calendar:
-                    CalendarView()
+                    AICalendarView()
                 case .similarPhotos:
                     SimilaritySectionsView(
                         viewModel: SimilaritySectionsViewModel(

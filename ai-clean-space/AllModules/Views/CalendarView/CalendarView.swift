@@ -1,51 +1,51 @@
 import SwiftUI
 import EventKit
 
-struct CalendarView: View {
+struct AICalendarView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var calendarService = CalendarService()
+    @StateObject private var aiCalendarAgent = AICalendarAgent()
 
-    @State private var selectedTab: CalendarFilter = .allEvents
-    @State private var searchText: String = ""
-    @State private var selectedEventIds = Set<String>()
-    @State private var showingPermissionAlert = false
-    @State private var showingDeleteConfirmation = false
-    @State private var showingCannotDeleteAlert = false
-    @State private var cannotDeleteMessage = ""
-    @State private var cannotDeleteEvents: [(SystemCalendarEvent, EventDeletionError)] = []
-    @State private var showingInstructions = false
+    @State private var currentFilterTab: CalendarOptimizationFilter = .aiScanEvents
+    @State private var queryText: String = ""
+    @State private var selectedEventIdentifiers = Set<String>()
+    @State private var showingAIPermissionPrompt = false
+    @State private var showingAIOptimizationConfirmation = false
+    @State private var showingOptimizationFailedAlert = false
+    @State private var optimizationFailureMessage = ""
+    @State private var failedOptimizationEvents: [(AICalendarSystemEvent, AICalendarDeletionError)] = []
+    @State private var showingAIGuide = false
 
-    @State private var startDate: Date = {
+    @State private var aiScanStartDate: Date = {
         var components = DateComponents()
         components.year = 2024
         components.month = 1
         components.day = 1
         return Calendar.current.date(from: components) ?? Date()
     }()
-    @State private var endDate = Date()
+    @State private var aiScanEndDate = Date()
 
-    @State private var showingStartDatePicker = false
-    @State private var showingEndDatePicker = false
+    @State private var showingAIScanStartDatePicker = false
+    @State private var showingAIScanEndDatePicker = false
 
-    var filteredEvents: [CalendarEvent] {
-        let calendarEvents = calendarService.events.map { CalendarEvent(from: $0) }
+    var intelligentFilteredEvents: [CalendarEvent] {
+        let aiCalendarEvents = aiCalendarAgent.events.map { CalendarEvent(from: $0) }
         
-        let start = min(startDate, endDate)
-        let end = max(startDate, endDate)
+        let start = min(aiScanStartDate, aiScanEndDate)
+        let end = max(aiScanStartDate, aiScanEndDate)
         
-        let filteredByDate = calendarEvents.filter { event in
+        let filteredByDate = aiCalendarEvents.filter { event in
             return event.date >= start && event.date <= end
         }
         
         let filteredBySearch = filteredByDate.filter { event in
-            return searchText.isEmpty || event.title.localizedCaseInsensitiveContains(searchText) || event.source.localizedCaseInsensitiveContains(searchText)
+            return queryText.isEmpty || event.title.localizedCaseInsensitiveContains(queryText) || event.source.localizedCaseInsensitiveContains(queryText)
         }
         
-        switch selectedTab {
-        case .allEvents:
+        switch currentFilterTab {
+        case .aiScanEvents:
             let result = filteredBySearch.filter { !$0.isWhiteListed }
             return result
-        case .whiteList:
+        case .aiSafeList:
             let result = filteredBySearch.filter { $0.isWhiteListed }
             return result
         }
@@ -54,68 +54,68 @@ struct CalendarView: View {
     var formattedStartDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: startDate)
+        return formatter.string(from: aiScanStartDate)
     }
 
     var formattedEndDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: endDate)
+        return formatter.string(from: aiScanEndDate)
     }
 
-    enum CalendarFilter {
-        case allEvents
-        case whiteList
+    enum CalendarOptimizationFilter {
+        case aiScanEvents
+        case aiSafeList
     }
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                headerView()
+                aiHeaderView()
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     .padding(.bottom, 20)
 
                 let hasAccess = if #available(iOS 17.0, *) {
-                    calendarService.authorizationStatus == .fullAccess
+                    aiCalendarAgent.authorizationStatus == .fullAccess
                 } else {
-                    calendarService.authorizationStatus == .authorized
+                    aiCalendarAgent.authorizationStatus == .authorized
                 }
                 
-                if calendarService.authorizationStatus == .denied {
-                    permissionDeniedView()
-                } else if calendarService.authorizationStatus == .notDetermined {
-                    requestPermissionView()
+                if aiCalendarAgent.authorizationStatus == .denied {
+                    aiPermissionDeniedView()
+                } else if aiCalendarAgent.authorizationStatus == .notDetermined {
+                    aiRequestPermissionView()
                 } else if !hasAccess {
-                    permissionDeniedView()
+                    aiPermissionDeniedView()
                 } else {
-                    filterButtonsView()
+                    aiFilterButtonsView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    searchBarView()
+                    aiSearchBarView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    dateNavigationView()
+                    aiDateNavigationView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    if calendarService.isLoading {
-                        loadingView()
-                    } else if filteredEvents.isEmpty && !searchText.isEmpty {
-                        emptyStateView()
-                    } else if filteredEvents.isEmpty {
-                        noEventsView()
+                    if aiCalendarAgent.isLoading {
+                        aiLoadingView()
+                    } else if intelligentFilteredEvents.isEmpty && !queryText.isEmpty {
+                        aiEmptyStateView()
+                    } else if intelligentFilteredEvents.isEmpty {
+                        aiNoEventsView()
                     } else {
-                        eventsListView()
+                        aiEventsListView()
                     }
                 }
                 
                 Spacer()
                 
-                if !selectedEventIds.isEmpty {
-                    actionButtonsView()
+                if !selectedEventIdentifiers.isEmpty {
+                    aiActionButtonsView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 32)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -124,34 +124,34 @@ struct CalendarView: View {
             .background(CMColor.background.ignoresSafeArea())
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showingStartDatePicker) {
-            SystemDatePickerView(selectedDate: $startDate)
+        .sheet(isPresented: $showingAIScanStartDatePicker) {
+            SystemDatePickerView(selectedDate: $aiScanStartDate)
                 .onDisappear {
                     Task {
-                        await calendarService.loadEvents(from: startDate, to: endDate)
+                        await aiCalendarAgent.loadEvents(from: aiScanStartDate, to: aiScanEndDate)
                     }
                 }
         }
-        .sheet(isPresented: $showingEndDatePicker) {
-            SystemDatePickerView(selectedDate: $endDate)
+        .sheet(isPresented: $showingAIScanEndDatePicker) {
+            SystemDatePickerView(selectedDate: $aiScanEndDate)
                 .onDisappear {
                     Task {
-                        await calendarService.loadEvents(from: startDate, to: endDate)
+                        await aiCalendarAgent.loadEvents(from: aiScanStartDate, to: aiScanEndDate)
                     }
                 }
         }
         .onAppear {
-            if calendarService.authorizationStatus == .notDetermined {
+            if aiCalendarAgent.authorizationStatus == .notDetermined {
                 Task {
-                    await calendarService.requestCalendarAccess()
+                    await aiCalendarAgent.requestCalendarAccess()
                 }
             } else {
                 Task {
-                    await calendarService.loadEvents(from: startDate, to: endDate)
+                    await aiCalendarAgent.loadEvents(from: aiScanStartDate, to: aiScanEndDate)
                 }
             }
         }
-        .alert("Calendar Access Required", isPresented: $showingPermissionAlert) {
+        .alert("AI Calendar Access Required", isPresented: $showingAIPermissionPrompt) {
             Button("Settings") {
                 if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(settingsUrl)
@@ -159,40 +159,40 @@ struct CalendarView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Please enable calendar access in Settings to view your events.")
+            Text("Please enable calendar access in Settings to allow the AI to optimize your schedule.")
         }
-        .alert("Delete Events", isPresented: $showingDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
-                deleteSelectedEvents()
+        .alert("AI-Powered Cleanup", isPresented: $showingAIOptimizationConfirmation) {
+            Button("Optimize", role: .destructive) {
+                performAIOptimization()
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Are you sure you want to delete \(selectedEventIds.count) selected event(s) from your calendar? This action cannot be undone.")
+            Text("The AI will permanently remove \(selectedEventIdentifiers.count) selected event(s) from your calendar. This action is irreversible.")
         }
         .overlay {
-            if showingCannotDeleteAlert {
+            if showingOptimizationFailedAlert {
                 CannotDeleteEventView(
-                    eventTitle: cannotDeleteEvents.first?.0.calendar ?? "Unknown Calendar",
-                    message: cannotDeleteMessage,
+                    eventTitle: failedOptimizationEvents.first?.0.calendar ?? "Unknown Calendar",
+                    message: optimizationFailureMessage,
                     onGuide: {
-                        showingCannotDeleteAlert = false
-                        showingInstructions = true
+                        showingOptimizationFailedAlert = false
+                        showingAIGuide = true
                     },
                     onCancel: {
-                        showingCannotDeleteAlert = false
+                        showingOptimizationFailedAlert = false
                     }
                 )
-                .animation(.easeInOut(duration: 0.3), value: showingCannotDeleteAlert)
+                .animation(.easeInOut(duration: 0.3), value: showingOptimizationFailedAlert)
             }
         }
-        .sheet(isPresented: $showingInstructions) {
+        .sheet(isPresented: $showingAIGuide) {
             CalendarInstructionsView()
         }
     }
-
+    
     // MARK: - Subviews
     
-    private func headerView() -> some View {
+    private func aiHeaderView() -> some View {
         HStack {
             Button(action: {
                 dismiss()
@@ -206,7 +206,7 @@ struct CalendarView: View {
             
             Spacer()
             
-            Text("Calendar")
+            Text("AI Calendar Scan")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
             
@@ -214,35 +214,35 @@ struct CalendarView: View {
             
             Button(action: {
                 withAnimation {
-                    if selectedEventIds.count == filteredEvents.count && !filteredEvents.isEmpty {
-                        selectedEventIds.removeAll()
+                    if selectedEventIdentifiers.count == intelligentFilteredEvents.count && !intelligentFilteredEvents.isEmpty {
+                        selectedEventIdentifiers.removeAll()
                     } else {
-                        selectedEventIds = Set(filteredEvents.map { $0.eventIdentifier })
+                        selectedEventIdentifiers = Set(intelligentFilteredEvents.map { $0.eventIdentifier })
                     }
                 }
             }) {
-                Text(selectedEventIds.count == filteredEvents.count && !filteredEvents.isEmpty ? "Deselect All" : "Select All")
+                Text(selectedEventIdentifiers.count == intelligentFilteredEvents.count && !intelligentFilteredEvents.isEmpty ? "Deselect All" : "Select All")
                     .foregroundColor(CMColor.primary)
             }
         }
     }
     
-    private func filterButtonsView() -> some View {
+    private func aiFilterButtonsView() -> some View {
         HStack(spacing: 0) {
-            ForEach([CalendarFilter.allEvents, .whiteList], id: \.self) { filter in
+            ForEach([CalendarOptimizationFilter.aiScanEvents, .aiSafeList], id: \.self) { filter in
                 Button(action: {
                     withAnimation {
-                        selectedTab = filter
-                        selectedEventIds.removeAll()
+                        currentFilterTab = filter
+                        selectedEventIdentifiers.removeAll()
                     }
                 }) {
-                    Text(filterName(for: filter))
+                    Text(aiFilterName(for: filter))
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(selectedTab == filter ? .white : CMColor.secondaryText)
+                        .foregroundColor(currentFilterTab == filter ? .white : CMColor.secondaryText)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 20)
                         .background(
-                            selectedTab == filter ? CMColor.primary : .clear
+                            currentFilterTab == filter ? CMColor.primary : .clear
                         )
                         .cornerRadius(12)
                 }
@@ -253,16 +253,16 @@ struct CalendarView: View {
         .cornerRadius(16)
     }
     
-    private func searchBarView() -> some View {
+    private func aiSearchBarView() -> some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(CMColor.secondaryText)
-            TextField("Search", text: $searchText)
+            TextField("Search AI-Scanned Events", text: $queryText)
                 .foregroundColor(CMColor.primaryText)
             
-            if !searchText.isEmpty {
+            if !queryText.isEmpty {
                 Button(action: {
-                    searchText = ""
+                    queryText = ""
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(CMColor.secondaryText)
@@ -275,10 +275,10 @@ struct CalendarView: View {
         .cornerRadius(12)
     }
     
-    private func dateNavigationView() -> some View {
+    private func aiDateNavigationView() -> some View {
         HStack {
             Button(action: {
-                showingStartDatePicker = true
+                showingAIScanStartDatePicker = true
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: "chevron.left")
@@ -290,7 +290,7 @@ struct CalendarView: View {
             Spacer()
             
             Button(action: {
-                showingEndDatePicker = true
+                showingAIScanEndDatePicker = true
             }) {
                 HStack(spacing: 8) {
                     Text(formattedEndDate)
@@ -301,18 +301,18 @@ struct CalendarView: View {
         }
     }
     
-    private func eventsListView() -> some View {
+    private func aiEventsListView() -> some View {
         ScrollView {
             LazyVStack(spacing: 0) {
-                ForEach(filteredEvents) { event in
+                ForEach(intelligentFilteredEvents) { event in
                     EventRowView(
                         event: event,
-                        isSelected: selectedEventIds.contains(event.eventIdentifier),
+                        isSelected: selectedEventIdentifiers.contains(event.eventIdentifier),
                         onSelect: {
-                            if selectedEventIds.contains(event.eventIdentifier) {
-                                selectedEventIds.remove(event.eventIdentifier)
+                            if selectedEventIdentifiers.contains(event.eventIdentifier) {
+                                selectedEventIdentifiers.remove(event.eventIdentifier)
                             } else {
-                                selectedEventIds.insert(event.eventIdentifier)
+                                selectedEventIdentifiers.insert(event.eventIdentifier)
                             }
                         }
                     )
@@ -326,14 +326,14 @@ struct CalendarView: View {
         }
     }
     
-    private func emptyStateView() -> some View {
+    private func aiEmptyStateView() -> some View {
         VStack(spacing: 8) {
-            Text("The search has not given any results")
+            Text("AI found no events matching your criteria.")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(CMColor.primaryText)
                 .multilineTextAlignment(.center)
             
-            Text("Try changing your search parameters or choosing a different range")
+            Text("Adjust your search parameters or time range for a new AI analysis.")
                 .font(.system(size: 15, weight: .regular))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
@@ -342,13 +342,13 @@ struct CalendarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func actionButtonsView() -> some View {
+    private func aiActionButtonsView() -> some View {
         HStack(spacing: 12) {
-            if selectedTab == .whiteList {
+            if currentFilterTab == .aiSafeList {
                 Button(action: {
-                    removeFromWhiteList()
+                    removeEventsFromAISafeList()
                 }) {
-                    Text("Remove from white list")
+                    Text("Remove from AI list")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -358,9 +358,9 @@ struct CalendarView: View {
                 }
             } else {
                 Button(action: {
-                    addToWhiteList()
+                    addEventsToAISafeList()
                 }) {
-                    Text("To white list")
+                    Text("Add to AI list")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -370,9 +370,9 @@ struct CalendarView: View {
                 }
                 
                 Button(action: {
-                    showingDeleteConfirmation = true
+                    showingAIOptimizationConfirmation = true
                 }) {
-                    Text("Delete")
+                    Text("AI Optimize")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -386,17 +386,17 @@ struct CalendarView: View {
     
     // MARK: - Permission Views
     
-    private func requestPermissionView() -> some View {
+    private func aiRequestPermissionView() -> some View {
         VStack(spacing: 20) {
-            Image(systemName: "calendar")
+            Image(systemName: "brain.head.profile")
                 .font(.system(size: 60))
                 .foregroundColor(CMColor.primary)
             
-            Text("Calendar Access Required")
+            Text("AI Requires Access to Your Calendar")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
             
-            Text("To clean up your calendar events, we need access to your calendar. Your data stays private and secure.")
+            Text("Our AI needs access to your calendar events to intelligently identify and remove clutter. Your data is processed securely and locally.")
                 .font(.system(size: 16))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
@@ -404,10 +404,10 @@ struct CalendarView: View {
             
             Button(action: {
                 Task {
-                    await calendarService.requestCalendarAccess()
+                    await aiCalendarAgent.requestCalendarAccess()
                 }
             }) {
-                Text("Grant Access")
+                Text("Grant AI Access")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -420,24 +420,24 @@ struct CalendarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func permissionDeniedView() -> some View {
+    private func aiPermissionDeniedView() -> some View {
         VStack(spacing: 20) {
-            Image(systemName: "calendar.badge.exclamationmark")
+            Image(systemName: "brain.head.profile.fill")
                 .font(.system(size: 60))
                 .foregroundColor(CMColor.error)
             
-            Text("Calendar Access Denied")
+            Text("AI Calendar Access Denied")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
             
-            Text("Please enable calendar access in Settings to view and manage your events.")
+            Text("To allow the AI to start optimizing your calendar, please enable access in your iPhone Settings.")
                 .font(.system(size: 16))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             
             Button(action: {
-                showingPermissionAlert = true
+                showingAIPermissionPrompt = true
             }) {
                 Text("Open Settings")
                     .font(.system(size: 17, weight: .semibold))
@@ -452,29 +452,29 @@ struct CalendarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func loadingView() -> some View {
+    private func aiLoadingView() -> some View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
             
-            Text("Loading calendar events...")
+            Text("AI is analyzing your calendar...")
                 .font(.system(size: 17, weight: .medium))
                 .foregroundColor(CMColor.secondaryText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func noEventsView() -> some View {
+    private func aiNoEventsView() -> some View {
         VStack(spacing: 20) {
-            Image(systemName: "calendar")
+            Image(systemName: "sparkles.square.filled.on.square")
                 .font(.system(size: 60))
                 .foregroundColor(CMColor.secondaryText)
             
-            Text("No Events Found")
+            Text("No Events for AI to Optimize")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(CMColor.primaryText)
             
-            Text("No calendar events found in the selected date range.")
+            Text("Our AI has scanned the selected period and found no events that require cleanup.")
                 .font(.system(size: 16))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
@@ -485,72 +485,72 @@ struct CalendarView: View {
     
     // MARK: - Action Methods
     
-    private func addToWhiteList() {
+    private func addEventsToAISafeList() {
         Task {
             let selectedEvents = getSelectedEvents()
             
             for event in selectedEvents {
-                let matchingEvent = calendarService.events.first(where: { systemEvent in
+                let matchingEvent = aiCalendarAgent.events.first(where: { systemEvent in
                     let idMatches = systemEvent.eventIdentifier == event.originalEventIdentifier
                     let dateMatches = Calendar.current.isDate(systemEvent.startDate, inSameDayAs: event.date)
                     return idMatches && dateMatches
                 })
                 
                 if let systemEvent = matchingEvent {
-                    calendarService.addToWhiteList(systemEvent)
+                    aiCalendarAgent.addToWhiteList(systemEvent)
                 }
             }
             
             await MainActor.run {
-                selectedEventIds.removeAll()
+                selectedEventIdentifiers.removeAll()
             }
         }
     }
     
-    private func removeFromWhiteList() {
+    private func removeEventsFromAISafeList() {
         Task {
             let selectedEvents = getSelectedEvents()
             for event in selectedEvents {
-                if let systemEvent = calendarService.events.first(where: {
+                if let systemEvent = aiCalendarAgent.events.first(where: {
                     $0.eventIdentifier == event.originalEventIdentifier &&
                     Calendar.current.isDate($0.startDate, inSameDayAs: event.date)
                 }) {
-                    calendarService.removeFromWhiteList(systemEvent)
+                    aiCalendarAgent.removeFromWhiteList(systemEvent)
                 }
             }
             
             await MainActor.run {
-                selectedEventIds.removeAll()
+                selectedEventIdentifiers.removeAll()
             }
         }
     }
     
-    private func deleteSelectedEvents() {
+    private func performAIOptimization() {
         Task {
             let selectedEvents = getSelectedEvents()
-            var systemEventsToDelete: [SystemCalendarEvent] = []
+            var systemEventsToOptimize: [AICalendarSystemEvent] = []
             var notFoundEvents: [CalendarEvent] = []
             
             for event in selectedEvents {
-                if let systemEvent = calendarService.events.first(where: {
+                if let systemEvent = aiCalendarAgent.events.first(where: {
                     $0.eventIdentifier == event.originalEventIdentifier &&
                     Calendar.current.isDate($0.startDate, inSameDayAs: event.date)
                 }) {
-                    systemEventsToDelete.append(systemEvent)
+                    systemEventsToOptimize.append(systemEvent)
                 } else {
                     notFoundEvents.append(event)
                 }
             }
 
-            let result = await calendarService.deleteEvents(systemEventsToDelete)
+            let result = await aiCalendarAgent.deleteEvents(systemEventsToOptimize)
             
             await MainActor.run {
-                selectedEventIds.removeAll()
+                selectedEventIdentifiers.removeAll()
                 
-                var allFailedEvents: [(SystemCalendarEvent, EventDeletionError)] = result.failedEvents
+                var allFailedEvents: [(AICalendarSystemEvent, AICalendarDeletionError)] = result.failedEvents
                 
                 for notFoundEvent in notFoundEvents {
-                    let tempSystemEvent = SystemCalendarEvent(
+                    let tempSystemEvent = AICalendarSystemEvent(
                         eventIdentifier: notFoundEvent.originalEventIdentifier,
                         title: notFoundEvent.title,
                         startDate: notFoundEvent.date,
@@ -564,29 +564,28 @@ struct CalendarView: View {
                 }
                 
                 if !allFailedEvents.isEmpty {
-                    cannotDeleteEvents = allFailedEvents
+                    failedOptimizationEvents = allFailedEvents
                     
                     if let firstCannotDelete = allFailedEvents.first {
-                        cannotDeleteMessage = firstCannotDelete.1.localizedDescription
+                        optimizationFailureMessage = firstCannotDelete.1.localizedDescription
                     }
                     
-                    showingCannotDeleteAlert = true
-                } else {
+                    showingOptimizationFailedAlert = true
                 }
             }
         }
     }
     
     private func getSelectedEvents() -> [CalendarEvent] {
-        return filteredEvents.filter { event in
-            selectedEventIds.contains(event.eventIdentifier)
+        return intelligentFilteredEvents.filter { event in
+            selectedEventIdentifiers.contains(event.eventIdentifier)
         }
     }
     
-    private func filterName(for filter: CalendarFilter) -> String {
+    private func aiFilterName(for filter: CalendarOptimizationFilter) -> String {
         switch filter {
-        case .allEvents: return "All events"
-        case .whiteList: return "White list"
+        case .aiScanEvents: return "All events"
+        case .aiSafeList: return "AI Safe List"
         }
     }
 }

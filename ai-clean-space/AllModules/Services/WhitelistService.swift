@@ -6,7 +6,7 @@ import Combine
 final class WhitelistCalendarService: ObservableObject {
     
     // MARK: - Published Properties
-    @Published var whitelistedEvents: [SystemCalendarEvent] = []
+    @Published var whitelistedEvents: [AICalendarSystemEvent] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -22,7 +22,7 @@ final class WhitelistCalendarService: ObservableObject {
     
     // MARK: - Public Methods
     
-    func addToWhitelist(_ event: SystemCalendarEvent) {
+    func addToWhitelist(_ event: AICalendarSystemEvent) {
         if isEventWhitelisted(event) {
             return
         }
@@ -33,12 +33,12 @@ final class WhitelistCalendarService: ObservableObject {
         saveWhitelistedEvents()
     }
     
-    func removeFromWhitelist(_ event: SystemCalendarEvent) {
+    func removeFromWhitelist(_ event: AICalendarSystemEvent) {
         whitelistedEvents.removeAll { $0.eventIdentifier == event.eventIdentifier }
         saveWhitelistedEvents()
     }
     
-    func isEventWhitelisted(_ event: SystemCalendarEvent) -> Bool {
+    func isEventWhitelisted(_ event: AICalendarSystemEvent) -> Bool {
         return whitelistedEvents.contains { $0.eventIdentifier == event.eventIdentifier }
     }
     
@@ -69,7 +69,7 @@ final class WhitelistCalendarService: ObservableObject {
         
         if let savedData = userDefaults.data(forKey: whitelistKey) {
             do {
-                whitelistedEvents = try JSONDecoder().decode([SystemCalendarEvent].self, from: savedData)
+                whitelistedEvents = try JSONDecoder().decode([AICalendarSystemEvent].self, from: savedData)
             } catch {
                 errorMessage = "Failed to load whitelist: \(error.localizedDescription)"
                 whitelistedEvents = []

@@ -26,7 +26,7 @@ struct CalendarEvent: Identifiable, Hashable {
     }
     
     // Инициализатор для создания из SystemCalendarEvent
-    init(from systemEvent: SystemCalendarEvent) {
+    init(from systemEvent: AICalendarSystemEvent) {
         self.title = systemEvent.title
         self.source = systemEvent.calendar // Используем calendar как source
         self.date = systemEvent.startDate // Используем startDate как date
@@ -45,9 +45,4 @@ struct CalendarEvent: Identifiable, Hashable {
         self.isWhiteListed = isWhiteListed
         self.isMarkedAsSpam = isMarkedAsSpam
     }
-}
-
-// MARK: - Preview
-#Preview {
-    CalendarView()
 }
