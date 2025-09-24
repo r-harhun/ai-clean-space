@@ -17,11 +17,11 @@ final class AICalendarAgent: ObservableObject {
     
     private let calendarEventStore = EKEventStore()
     private var subscriptionCancellables = Set<AnyCancellable>()
-    private let whitelistedCalendarService = WhitelistCalendarService()
+    private let safelistedCalendarService = SafelistCalendarService()
     
     init() {
         checkCurrentAuthorizationStatus()
-        setupWhitelistEventObserver()
+        setupSafelistEventObserver()
     }
     
     func requestCalendarAccess() async {
@@ -55,12 +55,12 @@ final class AICalendarAgent: ObservableObject {
         let predicate = calendarEventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
         let ekEvents = calendarEventStore.events(matching: predicate)
         
-        let whitelistedIdentifiers = whitelistedCalendarService.getWhitelistedEventIdentifiers()
+        let whitelistedIdentifiers = safelistedCalendarService.getSafelisteedEventIdentifiers()
         
         let systemEvents = ekEvents.map {
             let compositeId = "\($0.eventIdentifier ?? "")_\($0.startDate.timeIntervalSince1970)"
-            let isWhitelisted = whitelistedIdentifiers.contains(compositeId)
-            return AICalendarSystemEvent(from: $0, isWhitelisted: isWhitelisted)
+            let isSafelisted = whitelistedIdentifiers.contains(compositeId)
+            return AICalendarSystemEvent(from: $0, isWhitelisted: isSafelisted)
         }.sorted(by: { $0.startDate > $1.startDate })
         
         events = systemEvents
@@ -129,12 +129,12 @@ final class AICalendarAgent: ObservableObject {
     }
     
     func addToWhiteList(_ event: AICalendarSystemEvent) {
-        whitelistedCalendarService.addToWhitelist(event)
+        safelistedCalendarService.addToSafeliste(event)
         updateEventsSafelistStatus()
     }
     
     func removeFromWhiteList(_ event: AICalendarSystemEvent) {
-        whitelistedCalendarService.removeFromWhitelist(event)
+        safelistedCalendarService.removeFromSafeliste(event)
         updateEventsSafelistStatus()
     }
     
@@ -166,8 +166,8 @@ final class AICalendarAgent: ObservableObject {
         }
     }
     
-    private func setupWhitelistEventObserver() {
-        whitelistedCalendarService.$whitelistedEvents
+    private func setupSafelistEventObserver() {
+        safelistedCalendarService.$safelistedEvents
             .sink { [weak self] _ in
                 Task { @MainActor in
                     self?.updateEventsSafelistStatus()
@@ -177,17 +177,17 @@ final class AICalendarAgent: ObservableObject {
     }
     
     private func updateEventsSafelistStatus() {
-        let whitelistedIdentifiers = whitelistedCalendarService.getWhitelistedEventIdentifiers()
+        let safelistedIdentifiers = safelistedCalendarService.getSafelisteedEventIdentifiers()
         
         for index in events.indices {
             let compositeIdentifier = events[index].eventIdentifier
-            let isWhitelisted = whitelistedIdentifiers.contains(compositeIdentifier)
+            let isSafelisted = safelistedIdentifiers.contains(compositeIdentifier)
             
-            guard events[index].isWhiteListed != isWhitelisted else { continue }
+            guard events[index].isWhiteListed != isSafelisted else { continue }
             
-            events[index].isWhiteListed = isWhitelisted
+            events[index].isWhiteListed = isSafelisted
             
-            if isWhitelisted {
+            if isSafelisted {
                 events[index].isMarkedAsSpam = false
             }
         }

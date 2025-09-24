@@ -3,79 +3,79 @@ import CoreData
 import Combine
 
 @MainActor
-final class WhitelistCalendarService: ObservableObject {
+final class SafelistCalendarService: ObservableObject {
     
     // MARK: - Published Properties
-    @Published var whitelistedEvents: [AICalendarSystemEvent] = []
+    @Published var safelistedEvents: [AICalendarSystemEvent] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
     // MARK: - Private Properties
     private let userDefaults = UserDefaults.standard
-    private let whitelistKey = "whitelistedEvents"
+    private let safelistKey = " safelistedEvents"
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
     init() {
-        loadWhitelistedEvents()
+        loadSafelisteedEvents()
     }
     
     // MARK: - Public Methods
     
-    func addToWhitelist(_ event: AICalendarSystemEvent) {
-        if isEventWhitelisted(event) {
+    func addToSafeliste(_ event: AICalendarSystemEvent) {
+        if isEventSafelisteed(event) {
             return
         }
         
         var eventToAdd = event
         eventToAdd.isWhiteListed = true
-        whitelistedEvents.append(eventToAdd)
-        saveWhitelistedEvents()
+        safelistedEvents.append(eventToAdd)
+        saveSafelisteedEvents()
     }
     
-    func removeFromWhitelist(_ event: AICalendarSystemEvent) {
-        whitelistedEvents.removeAll { $0.eventIdentifier == event.eventIdentifier }
-        saveWhitelistedEvents()
+    func removeFromSafeliste(_ event: AICalendarSystemEvent) {
+         safelistedEvents.removeAll { $0.eventIdentifier == event.eventIdentifier }
+        saveSafelisteedEvents()
     }
     
-    func isEventWhitelisted(_ event: AICalendarSystemEvent) -> Bool {
-        return whitelistedEvents.contains { $0.eventIdentifier == event.eventIdentifier }
+    func isEventSafelisteed(_ event: AICalendarSystemEvent) -> Bool {
+        return safelistedEvents.contains { $0.eventIdentifier == event.eventIdentifier }
     }
     
-    func getWhitelistedEventIdentifiers() -> Set<String> {
-        let identifiers = Set(whitelistedEvents.map { $0.eventIdentifier })
+    func getSafelisteedEventIdentifiers() -> Set<String> {
+        let identifiers = Set(safelistedEvents.map { $0.eventIdentifier })
         return identifiers
     }
     
-    func clearWhitelist() {
-        whitelistedEvents = []
-        saveWhitelistedEvents()
+    func clearSafeliste() {
+        safelistedEvents = []
+        saveSafelisteedEvents()
     }
     
     // MARK: - Private Methods
     
-    private func saveWhitelistedEvents() {
+    private func saveSafelisteedEvents() {
         do {
-            let encodedData = try JSONEncoder().encode(whitelistedEvents)
-            userDefaults.set(encodedData, forKey: whitelistKey)
+            let encodedData = try JSONEncoder().encode(safelistedEvents)
+            userDefaults.set(encodedData, forKey:  safelistKey)
         } catch {
-            errorMessage = "Failed to save whitelist: \(error.localizedDescription)"
+            errorMessage = "Failed to save  safelist: \(error.localizedDescription)"
         }
     }
     
-    private func loadWhitelistedEvents() {
+    private func loadSafelisteedEvents() {
         isLoading = true
         errorMessage = nil
         
-        if let savedData = userDefaults.data(forKey: whitelistKey) {
+        if let savedData = userDefaults.data(forKey:  safelistKey) {
             do {
-                whitelistedEvents = try JSONDecoder().decode([AICalendarSystemEvent].self, from: savedData)
+                safelistedEvents = try JSONDecoder().decode([AICalendarSystemEvent].self, from: savedData)
             } catch {
-                errorMessage = "Failed to load whitelist: \(error.localizedDescription)"
-                whitelistedEvents = []
+                errorMessage = "Failed to load  safelist: \(error.localizedDescription)"
+                safelistedEvents = []
             }
         } else {
-            whitelistedEvents = []
+            safelistedEvents = []
         }
         
         isLoading = false
