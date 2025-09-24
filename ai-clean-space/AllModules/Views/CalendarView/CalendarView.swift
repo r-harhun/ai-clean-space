@@ -1,11 +1,10 @@
-
 import SwiftUI
 import EventKit
 
 struct CalendarView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var calendarService = CalendarService()
-    
+
     @State private var selectedTab: CalendarFilter = .allEvents
     @State private var searchText: String = ""
     @State private var selectedEventIds = Set<String>()
@@ -15,7 +14,7 @@ struct CalendarView: View {
     @State private var cannotDeleteMessage = ""
     @State private var cannotDeleteEvents: [(SystemCalendarEvent, EventDeletionError)] = []
     @State private var showingInstructions = false
-    
+
     @State private var startDate: Date = {
         var components = DateComponents()
         components.year = 2024
@@ -24,19 +23,13 @@ struct CalendarView: View {
         return Calendar.current.date(from: components) ?? Date()
     }()
     @State private var endDate = Date()
-    
+
     @State private var showingStartDatePicker = false
     @State private var showingEndDatePicker = false
-    
+
     var filteredEvents: [CalendarEvent] {
-        // Конвертируем системные события в CalendarEvent для совместимости
         let calendarEvents = calendarService.events.map { CalendarEvent(from: $0) }
         
-        print("🔍 [filteredEvents] Всего CalendarEvent: \(calendarEvents.count)")
-        let whitelistedCount = calendarEvents.filter { $0.isWhiteListed }.count
-        print("🔍 [filteredEvents] Из них whitelisted: \(whitelistedCount)")
-        
-        // Убедимся, что начальная дата не позже конечной
         let start = min(startDate, endDate)
         let end = max(startDate, endDate)
         
@@ -50,60 +43,39 @@ struct CalendarView: View {
         
         switch selectedTab {
         case .allEvents:
-            // Исключаем события из whitelist из "All events"
             let result = filteredBySearch.filter { !$0.isWhiteListed }
-            print("🔍 [filteredEvents] All events результат: \(result.count)")
             return result
         case .whiteList:
             let result = filteredBySearch.filter { $0.isWhiteListed }
-            print("🔍 [filteredEvents] White list результат: \(result.count)")
-            print("🔍 [filteredEvents] Всего событий для фильтрации: \(filteredBySearch.count)")
-            
-            if result.isEmpty {
-                print("🔍 [filteredEvents] White list пуст! Проверяем все события:")
-                let whitelistedCount = filteredBySearch.filter { $0.isWhiteListed }.count
-                print("🔍 [filteredEvents] Событий с isWhiteListed=true: \(whitelistedCount)")
-                
-                print("🔍 [filteredEvents] Первые 10 событий:")
-                for (i, event) in filteredBySearch.prefix(10).enumerated() {
-                    print("   \(i+1). '\(event.title)' isWhiteListed: \(event.isWhiteListed) eventId: \(event.eventIdentifier)")
-                }
-            } else {
-                print("🔍 [filteredEvents] White list содержит события:")
-                for (i, event) in result.prefix(5).enumerated() {
-                    print("   \(i+1). '\(event.title)' eventId: \(event.eventIdentifier)")
-                }
-            }
             return result
         }
     }
-    
+
     var formattedStartDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
         return formatter.string(from: startDate)
     }
-    
+
     var formattedEndDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
         return formatter.string(from: endDate)
     }
-    
+
     enum CalendarFilter {
         case allEvents
         case whiteList
     }
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header
                 headerView()
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     .padding(.bottom, 20)
-                
+
                 let hasAccess = if #available(iOS 17.0, *) {
                     calendarService.authorizationStatus == .fullAccess
                 } else {
@@ -117,22 +89,18 @@ struct CalendarView: View {
                 } else if !hasAccess {
                     permissionDeniedView()
                 } else {
-                    // Segmented Control
                     filterButtonsView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    // Search Bar
                     searchBarView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    // Date Navigation
                     dateNavigationView()
                         .padding(.horizontal, 16)
                         .padding(.bottom, 20)
                     
-                    // Loading or Events List
                     if calendarService.isLoading {
                         loadingView()
                     } else if filteredEvents.isEmpty && !searchText.isEmpty {
@@ -146,7 +114,6 @@ struct CalendarView: View {
                 
                 Spacer()
                 
-                // Action Buttons
                 if !selectedEventIds.isEmpty {
                     actionButtonsView()
                         .padding(.horizontal, 16)
@@ -174,17 +141,11 @@ struct CalendarView: View {
                 }
         }
         .onAppear {
-            print("📱 [CalendarView.onAppear] Статус разрешений: \(calendarService.authorizationStatus)")
-            print("📱 [CalendarView.onAppear] Загружено событий: \(calendarService.events.count)")
-            
             if calendarService.authorizationStatus == .notDetermined {
-                print("📱 [CalendarView.onAppear] Запрашиваем разрешения календаря")
                 Task {
                     await calendarService.requestCalendarAccess()
                 }
             } else {
-                print("📱 [CalendarView.onAppear] Разрешения уже есть, загружаем события")
-                // Если разрешения уже есть, загружаем события
                 Task {
                     await calendarService.loadEvents(from: startDate, to: endDate)
                 }
@@ -228,7 +189,7 @@ struct CalendarView: View {
             CalendarInstructionsView()
         }
     }
-    
+
     // MARK: - Subviews
     
     private func headerView() -> some View {
@@ -272,7 +233,7 @@ struct CalendarView: View {
                 Button(action: {
                     withAnimation {
                         selectedTab = filter
-                        selectedEventIds.removeAll() // Сбрасываем выделение при смене вкладки
+                        selectedEventIds.removeAll()
                     }
                 }) {
                     Text(filterName(for: filter))
@@ -383,9 +344,7 @@ struct CalendarView: View {
     
     private func actionButtonsView() -> some View {
         HStack(spacing: 12) {
-            // Кнопка для whitelist действий
             if selectedTab == .whiteList {
-                // На вкладке White list показываем только кнопку удаления из whitelist
                 Button(action: {
                     removeFromWhiteList()
                 }) {
@@ -398,7 +357,6 @@ struct CalendarView: View {
                         .cornerRadius(12)
                 }
             } else {
-                // На других вкладках показываем стандартные кнопки
                 Button(action: {
                     addToWhiteList()
                 }) {
@@ -530,39 +488,16 @@ struct CalendarView: View {
     private func addToWhiteList() {
         Task {
             let selectedEvents = getSelectedEvents()
-            print("🔍 [CalendarView] Начинаем добавление в whitelist")
-            print("🔍 [CalendarView] Выбрано событий: \(selectedEvents.count)")
-            print("🔍 [CalendarView] Всего системных событий: \(calendarService.events.count)")
             
-            for (index, event) in selectedEvents.enumerated() {
-                print("\n--- Событие \(index + 1) ---")
-                print("🔍 [CalendarView] Название: '\(event.title)'")
-                print("🔍 [CalendarView] Дата: \(event.date)")
-                print("🔍 [CalendarView] EventIdentifier: '\(event.eventIdentifier)'")
-                print("🔍 [CalendarView] OriginalEventIdentifier: '\(event.originalEventIdentifier)'")
-                
-                // Находим соответствующее системное событие по оригинальному eventIdentifier и дате
+            for event in selectedEvents {
                 let matchingEvent = calendarService.events.first(where: { systemEvent in
                     let idMatches = systemEvent.eventIdentifier == event.originalEventIdentifier
                     let dateMatches = Calendar.current.isDate(systemEvent.startDate, inSameDayAs: event.date)
-                    
-                    print("🔍 [CalendarView] Проверяем системное событие: '\(systemEvent.title)'")
-                    print("🔍 [CalendarView]   - System ID: '\(systemEvent.eventIdentifier)' vs Original: '\(event.originalEventIdentifier)' -> \(idMatches)")
-                    print("🔍 [CalendarView]   - System Date: \(systemEvent.startDate) vs Event Date: \(event.date) -> \(dateMatches)")
-                    
                     return idMatches && dateMatches
                 })
                 
                 if let systemEvent = matchingEvent {
-                    print("✅ [CalendarView] Найдено соответствие! Добавляем в whitelist: '\(systemEvent.title)'")
                     calendarService.addToWhiteList(systemEvent)
-                    print("📝 [CalendarView] Результат добавления")
-                } else {
-                    print("❌ [CalendarView] Не найдено системное событие для: '\(event.title)'")
-                    print("📊 [CalendarView] Первые 3 системных события:")
-                    for (i, sysEvent) in calendarService.events.prefix(3).enumerated() {
-                        print("   \(i+1). '\(sysEvent.title)' ID: '\(sysEvent.eventIdentifier)' Дата: \(sysEvent.startDate)")
-                    }
                 }
             }
             
@@ -576,9 +511,8 @@ struct CalendarView: View {
         Task {
             let selectedEvents = getSelectedEvents()
             for event in selectedEvents {
-                // Находим соответствующее системное событие по оригинальному eventIdentifier и дате
-                if let systemEvent = calendarService.events.first(where: { 
-                    $0.eventIdentifier == event.originalEventIdentifier && 
+                if let systemEvent = calendarService.events.first(where: {
+                    $0.eventIdentifier == event.originalEventIdentifier &&
                     Calendar.current.isDate($0.startDate, inSameDayAs: event.date)
                 }) {
                     calendarService.removeFromWhiteList(systemEvent)
@@ -599,7 +533,7 @@ struct CalendarView: View {
             
             for event in selectedEvents {
                 if let systemEvent = calendarService.events.first(where: {
-                    $0.eventIdentifier == event.originalEventIdentifier && 
+                    $0.eventIdentifier == event.originalEventIdentifier &&
                     Calendar.current.isDate($0.startDate, inSameDayAs: event.date)
                 }) {
                     systemEventsToDelete.append(systemEvent)
