@@ -71,52 +71,34 @@ struct AICalendarView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                aiHeaderView()
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 20)
-
-                let hasAccess = if #available(iOS 17.0, *) {
-                    aiCalendarAgent.authorizationStatus == .fullAccess
-                } else {
-                    aiCalendarAgent.authorizationStatus == .authorized
+                VStack(spacing: 24) {
+                    aiHeaderView()
+                    aiDateAndSearchStack()
+                    aiFilterButtonsView()
                 }
-                
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 24)
+
                 if aiCalendarAgent.authorizationStatus == .denied {
                     aiPermissionDeniedView()
                 } else if aiCalendarAgent.authorizationStatus == .notDetermined {
                     aiRequestPermissionView()
-                } else if !hasAccess {
-                    aiPermissionDeniedView()
+                } else if aiCalendarAgent.isLoading {
+                    aiLoadingView()
+                } else if intelligentFilteredEvents.isEmpty && !queryText.isEmpty {
+                    aiEmptyStateView()
+                } else if intelligentFilteredEvents.isEmpty {
+                    aiNoEventsView()
                 } else {
-                    aiFilterButtonsView()
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 20)
-                    
-                    aiSearchBarView()
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 20)
-                    
-                    aiDateNavigationView()
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 20)
-                    
-                    if aiCalendarAgent.isLoading {
-                        aiLoadingView()
-                    } else if intelligentFilteredEvents.isEmpty && !queryText.isEmpty {
-                        aiEmptyStateView()
-                    } else if intelligentFilteredEvents.isEmpty {
-                        aiNoEventsView()
-                    } else {
-                        aiEventsListView()
-                    }
+                    aiEventsListView()
                 }
-                
+
                 Spacer()
                 
                 if !selectedEventIdentifiers.isEmpty {
                     aiActionButtonsView()
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 24)
                         .padding(.bottom, 32)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -194,15 +176,14 @@ struct AICalendarView: View {
     
     private func aiHeaderView() -> some View {
         HStack {
-            Button(action: {
-                dismiss()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
-                }
-                .foregroundColor(CMColor.primary)
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(CMColor.primaryText)
             }
+            .frame(width: 44, height: 44)
+            .background(CMColor.backgroundSecondary)
+            .clipShape(Circle())
             
             Spacer()
             
@@ -222,13 +203,65 @@ struct AICalendarView: View {
                 }
             }) {
                 Text(selectedEventIdentifiers.count == intelligentFilteredEvents.count && !intelligentFilteredEvents.isEmpty ? "Deselect All" : "Select All")
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundColor(CMColor.primary)
             }
         }
     }
     
+    private func aiDateAndSearchStack() -> some View {
+        VStack(spacing: 16) {
+            HStack {
+                Button(action: { showingAIScanStartDatePicker = true }) {
+                    Text(formattedStartDate)
+                        .font(.system(size: 15, weight: .semibold))
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(CMColor.backgroundSecondary)
+                        .cornerRadius(12)
+                        .foregroundColor(CMColor.primary)
+                }
+                .frame(maxWidth: .infinity)
+                
+                Image(systemName: "arrow.right")
+                    .foregroundColor(CMColor.secondaryText)
+                
+                Button(action: { showingAIScanEndDatePicker = true }) {
+                    Text(formattedEndDate)
+                        .font(.system(size: 15, weight: .semibold))
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(CMColor.backgroundSecondary)
+                        .cornerRadius(12)
+                        .foregroundColor(CMColor.primary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(CMColor.secondaryText)
+                
+                TextField("Search AI-Scanned Events", text: $queryText)
+                    .foregroundColor(CMColor.primaryText)
+                    .submitLabel(.search)
+                
+                if !queryText.isEmpty {
+                    Button(action: { queryText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(CMColor.secondaryText)
+                    }
+                }
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(CMColor.backgroundSecondary)
+            .cornerRadius(12)
+        }
+    }
+    
     private func aiFilterButtonsView() -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 8) {
             ForEach([CalendarOptimizationFilter.aiScanEvents, .aiSafeList], id: \.self) { filter in
                 Button(action: {
                     withAnimation {
@@ -244,61 +277,13 @@ struct AICalendarView: View {
                         .background(
                             currentFilterTab == filter ? CMColor.primary : .clear
                         )
-                        .cornerRadius(12)
+                        .cornerRadius(16)
                 }
             }
         }
         .padding(4)
         .background(CMColor.backgroundSecondary)
-        .cornerRadius(16)
-    }
-    
-    private func aiSearchBarView() -> some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(CMColor.secondaryText)
-            TextField("Search AI-Scanned Events", text: $queryText)
-                .foregroundColor(CMColor.primaryText)
-            
-            if !queryText.isEmpty {
-                Button(action: {
-                    queryText = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(CMColor.secondaryText)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(CMColor.backgroundSecondary)
-        .cornerRadius(12)
-    }
-    
-    private func aiDateNavigationView() -> some View {
-        HStack {
-            Button(action: {
-                showingAIScanStartDatePicker = true
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chevron.left")
-                    Text(formattedStartDate)
-                }
-                .foregroundColor(CMColor.primary)
-            }
-            
-            Spacer()
-            
-            Button(action: {
-                showingAIScanEndDatePicker = true
-            }) {
-                HStack(spacing: 8) {
-                    Text(formattedEndDate)
-                    Image(systemName: "chevron.right")
-                }
-                .foregroundColor(CMColor.primary)
-            }
-        }
+        .cornerRadius(20)
     }
     
     private func aiEventsListView() -> some View {
@@ -316,69 +301,68 @@ struct AICalendarView: View {
                             }
                         }
                     )
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
                     
                     Divider()
                         .background(CMColor.border)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 24)
                 }
             }
         }
     }
     
     private func aiEmptyStateView() -> some View {
-        VStack(spacing: 8) {
-            Text("AI found no events matching your criteria.")
-                .font(.system(size: 17, weight: .semibold))
+        VStack(spacing: 16) {
+            Image(systemName: "sparkle.magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(CMColor.secondaryText)
+            
+            Text("No Matching Events Found")
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
                 .multilineTextAlignment(.center)
             
-            Text("Adjust your search parameters or time range for a new AI analysis.")
-                .font(.system(size: 15, weight: .regular))
+            Text("Try adjusting your search query or the date range to find events for AI analysis.")
+                .font(.system(size: 16))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
         }
-        .padding(.horizontal, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func aiActionButtonsView() -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             if currentFilterTab == .aiSafeList {
-                Button(action: {
-                    removeEventsFromAISafeList()
-                }) {
-                    Text("Remove from AI list")
+                Button(action: { removeEventsFromAISafeList() }) {
+                    Text("Remove from Safe list")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(CMColor.secondary)
-                        .cornerRadius(12)
+                        .cornerRadius(16)
                 }
             } else {
-                Button(action: {
-                    addEventsToAISafeList()
-                }) {
-                    Text("Add to AI list")
+                Button(action: { addEventsToAISafeList() }) {
+                    Text("Add to Safe list")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(CMColor.secondary)
-                        .cornerRadius(12)
+                        .cornerRadius(16)
                 }
                 
-                Button(action: {
-                    showingAIOptimizationConfirmation = true
-                }) {
+                Button(action: { showingAIOptimizationConfirmation = true }) {
                     Text("AI Optimize")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(CMColor.error)
-                        .cornerRadius(12)
+                        .cornerRadius(16)
                 }
             }
         }
@@ -387,14 +371,15 @@ struct AICalendarView: View {
     // MARK: - Permission Views
     
     private func aiRequestPermissionView() -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Image(systemName: "brain.head.profile")
-                .font(.system(size: 60))
+                .font(.system(size: 80))
                 .foregroundColor(CMColor.primary)
             
-            Text("AI Requires Access to Your Calendar")
-                .font(.system(size: 24, weight: .bold))
+            Text("AI Requires Access")
+                .font(.system(size: 28, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
+                .multilineTextAlignment(.center)
             
             Text("Our AI needs access to your calendar events to intelligently identify and remove clutter. Your data is processed securely and locally.")
                 .font(.system(size: 16))
@@ -413,7 +398,7 @@ struct AICalendarView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(CMColor.primary)
-                    .cornerRadius(12)
+                    .cornerRadius(16)
             }
             .padding(.horizontal, 40)
         }
@@ -421,31 +406,30 @@ struct AICalendarView: View {
     }
     
     private func aiPermissionDeniedView() -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "brain.head.profile.fill")
-                .font(.system(size: 60))
+        VStack(spacing: 24) {
+            Image(systemName: "lock.slash.fill")
+                .font(.system(size: 80))
                 .foregroundColor(CMColor.error)
             
-            Text("AI Calendar Access Denied")
-                .font(.system(size: 24, weight: .bold))
+            Text("Access Denied")
+                .font(.system(size: 28, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
+                .multilineTextAlignment(.center)
             
-            Text("To allow the AI to start optimizing your calendar, please enable access in your iPhone Settings.")
+            Text("Please enable calendar access in your iPhone Settings to allow the AI to optimize your schedule.")
                 .font(.system(size: 16))
                 .foregroundColor(CMColor.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             
-            Button(action: {
-                showingAIPermissionPrompt = true
-            }) {
+            Button(action: { showingAIPermissionPrompt = true }) {
                 Text("Open Settings")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(CMColor.primary)
-                    .cornerRadius(12)
+                    .cornerRadius(16)
             }
             .padding(.horizontal, 40)
         }
@@ -456,6 +440,7 @@ struct AICalendarView: View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
+                .tint(CMColor.primary)
             
             Text("AI is analyzing your calendar...")
                 .font(.system(size: 17, weight: .medium))
@@ -465,14 +450,15 @@ struct AICalendarView: View {
     }
     
     private func aiNoEventsView() -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "sparkles.square.filled.on.square")
-                .font(.system(size: 60))
+        VStack(spacing: 24) {
+            Image(systemName: "calendar.badge.checkmark")
+                .font(.system(size: 80))
                 .foregroundColor(CMColor.secondaryText)
             
-            Text("No Events for AI to Optimize")
-                .font(.system(size: 20, weight: .semibold))
+            Text("No Events to Optimize")
+                .font(.system(size: 22, weight: .bold))
                 .foregroundColor(CMColor.primaryText)
+                .multilineTextAlignment(.center)
             
             Text("Our AI has scanned the selected period and found no events that require cleanup.")
                 .font(.system(size: 16))
@@ -541,7 +527,7 @@ struct AICalendarView: View {
                     notFoundEvents.append(event)
                 }
             }
-
+            
             let result = await aiCalendarAgent.deleteEvents(systemEventsToOptimize)
             
             await MainActor.run {
