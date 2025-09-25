@@ -176,7 +176,7 @@ private struct SecurityToggleRow: View {
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .tint(CMColor.activeButton)
+                .tint(CMColor.primary)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 15)

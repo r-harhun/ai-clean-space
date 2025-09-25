@@ -33,7 +33,6 @@ struct CMColor {
     static var success: Color { dynamicColor("Success") }
     static var warning: Color { dynamicColor("Warning") }
     static var error: Color { dynamicColor("Error") }
-    static var activeButton: Color { dynamicColor("activeButton") }
 
     // MARK: - Icon Colors
     static var iconPrimary: Color { dynamicColor("IconPrimary") }

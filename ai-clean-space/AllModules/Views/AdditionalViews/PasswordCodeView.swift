@@ -272,7 +272,7 @@ struct PINView: View {
         if displayError {
             return CMColor.error
         } else if index < inputCode.count {
-            return CMColor.activeButton
+            return CMColor.primary
         } else {
             return CMColor.secondaryText.opacity(0.3)
         }

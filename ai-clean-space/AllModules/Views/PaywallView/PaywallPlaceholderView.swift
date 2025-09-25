@@ -179,7 +179,7 @@ struct PaywallContinueButton: View {
                 .foregroundColor(CMColor.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
-                .background(CMColor.activeButton)
+                .background(CMColor.primary)
                 .clipShape(Capsule())
         }
     }

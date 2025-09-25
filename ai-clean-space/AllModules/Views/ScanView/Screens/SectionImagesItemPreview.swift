@@ -15,7 +15,7 @@ struct SectionImagesItemPreview: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation Bar
+            // MARK: - Navigation Bar
             HStack {
                 Button {
                     dismiss()
@@ -26,7 +26,7 @@ struct SectionImagesItemPreview: View {
                         Text("Back")
                             .font(.system(size: 17, weight: .regular))
                     }
-                    .foregroundColor(.blue)
+                    .foregroundColor(CMColor.primary)
                 }
                 
                 Spacer()
@@ -38,40 +38,35 @@ struct SectionImagesItemPreview: View {
                 Spacer()
                 
                 Button {
-                    // Done action - можно добавить логику сохранения
                     dismiss()
                 } label: {
                     Text("Done")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.blue)
+                        .foregroundColor(CMColor.primary)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(CMColor.backgroundSecondary)
             
-            // Main Content
-            VStack(spacing: 0) {
-                // Large Preview Image - занимает всё доступное пространство
+            // MARK: - Main Content Area
+            HStack(spacing: 0) {
+                // MARK: - Main Image and Checkbox
                 if selectedIndex < section.models.count {
                     let selectedModel = section.models[selectedIndex]
                     
-                    // Main Image with proper aspect ratio and corner radius
                     ZStack {
-                        selectedModel.imageView(
-                            size: CGSize(width: 400, height: 400)
-                        )
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 24)) // Правильное скругление
-                        .clipped()
-
-                        // Checkbox overlay - в правом верхнем углу превью
+                        selectedModel.imageView(size: CGSize(width: 400, height: 400))
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(CMColor.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .clipped()
+                        
+                        // Checkbox in top-right corner
                         VStack {
                             HStack {
                                 Spacer()
-                                
                                 CheckboxView(isSelected: viewModel.isSelected(selectedModel))
                                     .scaleEffect(1.2)
                                     .onTapGesture {
@@ -85,25 +80,20 @@ struct SectionImagesItemPreview: View {
                             }
                             .padding(.top, 8)
                             .padding(.trailing, 8)
-                            
                             Spacer()
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.top, 12)
+                    .background(CMColor.background)
+                    .frame(maxWidth: .infinity)
                 }
                 
-                // Bottom Thumbnail Slider - фиксированная высота
+                // MARK: - Vertical Thumbnails ScrollView
                 VStack(spacing: 0) {
-                    // Divider line
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 1)
-                        .padding(.horizontal, 16)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
+                    ScrollView(.vertical, showsIndicators: false) {
                         ScrollViewReader { proxy in
-                            HStack(spacing: 8) {
+                            VStack(spacing: 8) {
                                 ForEach(section.models.indices, id: \.self) { index in
                                     let model = section.models[index]
                                     
@@ -113,12 +103,10 @@ struct SectionImagesItemPreview: View {
                                         }
                                     } label: {
                                         ZStack {
-                                            // Thumbnail Image
                                             model.imageView(size: CGSize(width: 70, height: 70))
                                                 .frame(width: 70, height: 70)
                                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                             
-                                            // Selection indicator
                                             if viewModel.isSelected(model) {
                                                 VStack {
                                                     HStack {
@@ -134,7 +122,7 @@ struct SectionImagesItemPreview: View {
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12)
                                                 .stroke(
-                                                    selectedIndex == index ? Color.blue : Color.clear,
+                                                    selectedIndex == index ? CMColor.primary : CMColor.clear,
                                                     lineWidth: 3
                                                 )
                                         )
@@ -145,8 +133,8 @@ struct SectionImagesItemPreview: View {
                                     .id(index)
                                 }
                             }
-                            .padding(.horizontal, 16)
                             .padding(.vertical, 16)
+                            .padding(.horizontal, 16)
                             .onAppear {
                                 proxy.scrollTo(selectedIndex, anchor: .center)
                             }
@@ -157,35 +145,12 @@ struct SectionImagesItemPreview: View {
                             }
                         }
                     }
-                    .frame(height: 102) // Фиксированная высота для слайдера
                 }
                 .background(CMColor.backgroundSecondary)
+                .fixedSize(horizontal: true, vertical: false) // The correct fix to keep its width stable
             }
         }
         .background(CMColor.backgroundSecondary)
         .navigationBarHidden(true)
     }
 }
-
-// MARK: - Preview
-#if DEBUG
-struct SectionImagesItemPreview_Previews: PreviewProvider {
-    static var previews: some View {
-        // Mock data for preview
-        let mockSection = AICleanServiceSection(
-            kind: .count,
-            models: [] // В реальном приложении здесь будут модели
-        )
-        let mockViewModel = SimilaritySectionsViewModel(
-            sections: [mockSection],
-            type: .similar
-        )
-        
-        SectionImagesItemPreview(
-            section: mockSection,
-            initialIndex: 0,
-            viewModel: mockViewModel
-        )
-    }
-}
-#endif

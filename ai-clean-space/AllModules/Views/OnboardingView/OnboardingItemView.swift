@@ -69,7 +69,7 @@ struct OnboardingItemView: View {
                             .foregroundColor(Color.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(CMColor.activeButton)
+                            .background(CMColor.primary)
                             .clipShape(Capsule())
                             .padding(.horizontal, 24)
                     }
