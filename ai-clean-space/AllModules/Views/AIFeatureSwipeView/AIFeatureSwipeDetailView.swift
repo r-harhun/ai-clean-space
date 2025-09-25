@@ -95,7 +95,7 @@ struct AIFeatureSwipeDetailView: View {
             callback()
         }
     }
-            
+    
     private func processBackAction() {
         switch mode {
         case .swipeMode:
@@ -166,7 +166,7 @@ struct AIFeatureSwipeDetailView: View {
                     Text("Back")
                         .font(.system(size: 17, weight: .regular))
                 }
-                .foregroundColor(.purple)
+                .foregroundColor(CMColor.primary)
             }
             
             Spacer()
@@ -188,7 +188,7 @@ struct AIFeatureSwipeDetailView: View {
             } label: {
                 Text("Finish")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.purple)
+                    .foregroundColor(CMColor.primary)
             }
         }
         .padding(.horizontal, 16)
@@ -209,10 +209,10 @@ struct AIFeatureSwipeDetailView: View {
                     model.imageView(size: CGSize(width: 400, height: 400))
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.clear)
+                        .background(CMColor.clear)
                         .clipShape(RoundedRectangle(cornerRadius: 24))
                         .clipped()
-                        
+                    
                     if isTopCard && !isCardAnimating {
                         actionIndicatorsView()
                     }
@@ -229,7 +229,7 @@ struct AIFeatureSwipeDetailView: View {
                                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
                                     Image(systemName: decision.iconName)
                                         .font(.system(size: 36, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(CMColor.secondaryText)
                                 }
                                 Spacer()
                             }
@@ -240,28 +240,22 @@ struct AIFeatureSwipeDetailView: View {
                 }
                 .scaleEffect({
                     if isTopCard {
-                        return 1.0
+                        return 1.0 - abs(dragMovement) / 500
                     } else {
                         return 1.0 - CGFloat(modelIndex - safeCurrentIndex) * 0.05
                     }
                 }())
                 .offset(x: {
                     if isTopCard {
-                        return dragMovement * 0.8
+                        return dragMovement
                     } else {
                         return 0
                     }
                 }(), y: CGFloat(modelIndex - safeCurrentIndex) * 8)
-                .rotationEffect(.degrees({
-                    if isTopCard {
-                        return dragMovement / 20
-                    } else {
-                        return 0
-                    }
-                }()))
+                .rotationEffect(.degrees(0)) // Убрали наклон
                 .opacity(isTopCard ? 1.0 : (1.0 - CGFloat(modelIndex - safeCurrentIndex) * 0.25))
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.8), value: dragMovement)
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.8), value: dragMovement)
                 .animation(.spring(response: 0.6, dampingFraction: 0.7), value: photoIndex)
                 .zIndex(Double(10 - (modelIndex - safeCurrentIndex)))
             }
@@ -325,7 +319,7 @@ struct AIFeatureSwipeDetailView: View {
                 }
         )
     }
-            
+    
     @ViewBuilder
     private func actionIndicatorsView() -> some View {
         if dragMovement < -30 {
@@ -334,14 +328,14 @@ struct AIFeatureSwipeDetailView: View {
                     Spacer()
                     ZStack {
                         Circle()
-                            .fill(Color.red)
+                            .fill(CMColor.error)
                             .frame(width: 80, height: 80)
                             .opacity(min(abs(dragMovement) / swipeDistanceThreshold, 1.0))
                             .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                            
+                        
                         Image(systemName: "xmark")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(CMColor.secondaryText)
                     }
                     .scaleEffect(currentAction == .delete ? 1.15 : 1.0)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: currentAction)
@@ -358,25 +352,25 @@ struct AIFeatureSwipeDetailView: View {
                 removal: .scale.combined(with: .opacity)
             ))
         }
-            
+        
         if dragMovement > 30 {
             VStack {
                 HStack {
                     ZStack {
                         Circle()
-                            .fill(Color.green)
+                            .fill(CMColor.success)
                             .frame(width: 80, height: 80)
                             .opacity(min(abs(dragMovement) / swipeDistanceThreshold, 1.0))
                             .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                            
+                        
                         Image(systemName: "checkmark")
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(CMColor.secondaryText)
                     }
                     .scaleEffect(currentAction == .keep ? 1.15 : 1.0)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: currentAction)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragMovement)
-                        
+                    
                     Spacer()
                 }
                 .padding(.top, 32)
@@ -391,12 +385,12 @@ struct AIFeatureSwipeDetailView: View {
             ))
         }
     }
-            
+    
     @ViewBuilder
     private func thumbnailCarouselView() -> some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(Color.gray.opacity(0.2))
+                .fill(CMColor.primaryText.opacity(0.2))
                 .frame(height: 1)
                 .padding(.horizontal, 16)
                 
@@ -406,7 +400,7 @@ struct AIFeatureSwipeDetailView: View {
                         ForEach(allImageModels.indices, id: \.self) { index in
                             let model = allImageModels[index]
                             let decision = assetDecisions[model.asset.localIdentifier] ?? .none
-                                
+                                        
                             Button {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     photoIndex = index
@@ -418,7 +412,7 @@ struct AIFeatureSwipeDetailView: View {
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 12)
                                             .stroke(
-                                                min(photoIndex, allImageModels.count - 1) == index ? Color.blue : decision.color,
+                                                min(photoIndex, allImageModels.count - 1) == index ? CMColor.primary : decision.color,
                                                 lineWidth: min(photoIndex, allImageModels.count - 1) == index ? 3 : (decision != .none ? 2 : 0)
                                             )
                                     )
@@ -438,7 +432,7 @@ struct AIFeatureSwipeDetailView: View {
                                                             
                                                             Image(systemName: decision.iconName)
                                                                 .font(.system(size: 10, weight: .bold))
-                                                                .foregroundColor(.white)
+                                                                .foregroundColor(CMColor.secondaryText)
                                                         }
                                                     }
                                                         

@@ -1,7 +1,6 @@
 import SwiftUI
 import Photos
 
-
 struct ResultsAIFeatureSwipePopup: View {
     let deleteCount: Int
     @Binding var isPresented: Bool
@@ -13,7 +12,7 @@ struct ResultsAIFeatureSwipePopup: View {
     
     var body: some View {
         ZStack {
-            Color.black
+            CMColor.black
                 .opacity(backgroundOpacity)
                 .ignoresSafeArea()
                 .onTapGesture {
@@ -32,18 +31,18 @@ struct ResultsAIFeatureSwipePopup: View {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(
-                                colors: [Color.purple.opacity(0.2), Color.blue.opacity(0.2)],
+                                colors: [CMColor.primary.opacity(0.2), CMColor.accent.opacity(0.2)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ))
                             .frame(width: 80, height: 80)
-                            .shadow(color: .purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                            .shadow(color: CMColor.primary.opacity(0.3), radius: 8, x: 0, y: 4)
                         
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 40, weight: .medium))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color.purple, Color.blue],
+                                    colors: [CMColor.primary, CMColor.accent],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -54,12 +53,12 @@ struct ResultsAIFeatureSwipePopup: View {
                         Text("Ready to see your results?")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                            .foregroundColor(CMColor.primaryText)
                             .multilineTextAlignment(.center)
                         
                         Text("You've selected \(deleteCount) photo\(deleteCount == 1 ? "" : "s") for deletion. Would you like to review your selections?")
                             .font(.body)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(CMColor.secondaryText)
                             .multilineTextAlignment(.center)
                             .lineLimit(3)
                     }
@@ -86,24 +85,23 @@ struct ResultsAIFeatureSwipePopup: View {
                             Text("View Results (\(deleteCount) to delete)")
                                 .font(.system(size: 17, weight: .semibold))
                         }
-                        .foregroundColor(.white)
+                        .foregroundColor(CMColor.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             LinearGradient(
-                                colors: [Color.purple, Color.blue],
+                                colors: [CMColor.primary, CMColor.accent],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .shadow(color: .purple.opacity(0.4), radius: 8, x: 0, y: 4)
+                        .shadow(color: CMColor.primary.opacity(0.4), radius: 8, x: 0, y: 4)
                     }
                     .scaleEffect(showContent ? 1 : 0.8)
                     .opacity(showContent ? 1 : 0)
                     .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1), value: showContent)
                     
-                    // Secondary button - Close
                     Button {
                         let impact = UIImpactFeedbackGenerator(style: .light)
                         impact.impactOccurred()
@@ -116,10 +114,10 @@ struct ResultsAIFeatureSwipePopup: View {
                             Text("Close")
                                 .font(.system(size: 17, weight: .medium))
                         }
-                        .foregroundColor(.primary)
+                        .foregroundColor(CMColor.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color(.systemGray6))
+                        .background(CMColor.backgroundSecondary)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .scaleEffect(showContent ? 1 : 0.8)
@@ -131,7 +129,7 @@ struct ResultsAIFeatureSwipePopup: View {
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(.regularMaterial)
-                    .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 10)
+                    .shadow(color: CMColor.black.opacity(0.1), radius: 20, x: 0, y: 10)
             )
             .padding(.horizontal, 40)
             .scaleEffect(showContent ? 1 : 0.7)
@@ -155,4 +153,3 @@ struct ResultsAIFeatureSwipePopup: View {
         onContinueSwiping()
     }
 }
-

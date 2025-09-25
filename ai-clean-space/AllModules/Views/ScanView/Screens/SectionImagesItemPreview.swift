@@ -87,6 +87,7 @@ struct SectionImagesItemPreview: View {
                     .padding(.top, 12)
                     .background(CMColor.background)
                     .frame(maxWidth: .infinity)
+                    .id(selectedModel.asset.localIdentifier)
                 }
                 
                 // MARK: - Vertical Thumbnails ScrollView
@@ -147,7 +148,7 @@ struct SectionImagesItemPreview: View {
                     }
                 }
                 .background(CMColor.backgroundSecondary)
-                .fixedSize(horizontal: true, vertical: false) // The correct fix to keep its width stable
+                .fixedSize(horizontal: true, vertical: false)
             }
         }
         .background(CMColor.backgroundSecondary)

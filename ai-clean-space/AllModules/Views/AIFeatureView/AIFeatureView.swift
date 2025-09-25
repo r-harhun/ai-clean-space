@@ -183,22 +183,12 @@ struct AIFeatureView: View {
                     HStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .fill(LinearGradient(
-                                    colors: [CMColor.primary.opacity(0.2), CMColor.accent.opacity(0.2)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
+                                .fill(CMColor.backgroundGradient.opacity(0.2))
                                 .frame(width: 50, height: 50)
                             
                             Image(systemName: "chart.bar.fill")
                                 .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [CMColor.primary, CMColor.accent],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
+                                .foregroundStyle(CMColor.backgroundGradient)
                         }
                         
                         VStack(alignment: .leading, spacing: 6) {
@@ -232,15 +222,7 @@ struct AIFeatureView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 18)
                     .background(
-                        LinearGradient(
-                            colors: [
-                                CMColor.primaryDark.opacity(0.9),
-                                CMColor.secondary.opacity(0.8),
-                                CMColor.accent.opacity(0.7)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        CMColor.primaryGradient
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .shadow(
@@ -255,23 +237,10 @@ struct AIFeatureView: View {
                         x: 0,
                         y: 4
                     )
-                    .overlay(
-                        LinearGradient(
-                            colors: [CMColor.white.opacity(0.3), CMColor.clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    )
-                    .scaleEffect(1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.hasSwipeResults)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(20)
-        .background(CMColor.backgroundSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
     
     @ViewBuilder

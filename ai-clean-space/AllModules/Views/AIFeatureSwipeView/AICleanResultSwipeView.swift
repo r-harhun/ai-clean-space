@@ -34,7 +34,7 @@ struct AICleanResultSwipeView: View {
             
             bottomActionButtonsView()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(CMColor.backgroundSecondary)
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showingRemovedPhotos) {
             let removeSections = viewModel.getSectionsForAssetIdentifiers(swipeResultsData.deletedPhotos)
@@ -65,7 +65,7 @@ struct AICleanResultSwipeView: View {
             )
         }
     }
-            
+    
     @ViewBuilder
     private func setupNavigationBar() -> some View {
         HStack {
@@ -78,14 +78,14 @@ struct AICleanResultSwipeView: View {
                     Text("Back")
                         .font(.system(size: 17, weight: .regular))
                 }
-                .foregroundColor(.purple)
+                .foregroundColor(CMColor.primary)
             }
             
             Spacer()
             
             Text("Results")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.primary)
+                .foregroundColor(CMColor.primaryText)
             
             Spacer()
             
@@ -94,14 +94,14 @@ struct AICleanResultSwipeView: View {
             } label: {
                 Text("Finish")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.purple)
+                    .foregroundColor(CMColor.primary)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(.systemBackground))
+        .background(CMColor.background)
     }
-            
+    
     @ViewBuilder
     private func keptSectionView() -> some View {
         Button {
@@ -114,11 +114,11 @@ struct AICleanResultSwipeView: View {
                     Text("Saved")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        
+                        .foregroundColor(CMColor.primaryText)
+                    
                     Text("These photos remain on the device")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CMColor.secondaryText)
                 }
                 
                 Spacer()
@@ -126,22 +126,22 @@ struct AICleanResultSwipeView: View {
                 HStack(spacing: 8) {
                     Text("\(swipeResultsData.keptCount)")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        
+                        .foregroundColor(CMColor.secondaryText)
+                    
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary.opacity(0.6))
+                        .foregroundColor(CMColor.secondaryText.opacity(0.6))
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            .background(Color(.systemBackground))
+            .background(CMColor.background)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .disabled(swipeResultsData.keptCount == 0)
     }
-            
+    
     @ViewBuilder
     private func removedSectionView() -> some View {
         Button {
@@ -154,11 +154,11 @@ struct AICleanResultSwipeView: View {
                     Text("Remove")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        
+                        .foregroundColor(CMColor.primaryText)
+                    
                     Text("These photos will be deleted")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(CMColor.secondaryText)
                 }
                 
                 Spacer()
@@ -166,22 +166,22 @@ struct AICleanResultSwipeView: View {
                 HStack(spacing: 8) {
                     Text("\(swipeResultsData.deletedCount)")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        
+                        .foregroundColor(CMColor.secondaryText)
+                    
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary.opacity(0.6))
+                        .foregroundColor(CMColor.secondaryText.opacity(0.6))
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            .background(Color(.systemBackground))
+            .background(CMColor.background)
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
         .disabled(swipeResultsData.deletedCount == 0)
     }
-            
+    
     @ViewBuilder
     private func bottomActionButtonsView() -> some View {
         VStack(spacing: 16) {
@@ -196,12 +196,12 @@ struct AICleanResultSwipeView: View {
                 } label: {
                     Text("Delete \(swipeResultsData.deletedCount) photos")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(CMColor.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
                             LinearGradient(
-                                colors: [Color.purple, Color.blue],
+                                colors: [CMColor.primary, CMColor.accent],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -214,10 +214,10 @@ struct AICleanResultSwipeView: View {
                 } label: {
                     Text("No photos to delete")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(CMColor.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color.gray)
+                        .background(CMColor.secondaryText.opacity(0.5))
                         .clipShape(Capsule())
                 }
                 .disabled(true)
@@ -225,6 +225,6 @@ struct AICleanResultSwipeView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 34)
-        .background(Color(.systemBackground))
+        .background(CMColor.background)
     }
 }
