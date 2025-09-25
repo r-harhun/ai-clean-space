@@ -8,6 +8,8 @@ struct AICleanSpaceView: View {
     @State private var isSafeFolderUnlocked: Bool = false
     @State private var isPaywallPresented: Bool = false
 
+    @AppStorage("paywallShown") var paywallShown: Bool = false
+
     private var scalingFactor: CGFloat {
         UIScreen.main.bounds.height / 844
     }
@@ -17,27 +19,26 @@ struct AICleanSpaceView: View {
             CMColor.background
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                switch viewModel.currentSelectedTab {
-                case .clean:
-                    MainView(isPaywallPresented: $isPaywallPresented)
-                case .dashboard:
-                    SpeedTestView(isPaywallPresented: $isPaywallPresented)
-                case .star:
-                    AIFeatureView(isPaywallPresented: $isPaywallPresented)
-                case .safeFolder:
-                    safeFolder
-                case .backup:
-                    BackupView()
+            if paywallShown {
+                VStack(spacing: 0) {
+                    switch viewModel.currentSelectedTab {
+                    case .clean:
+                        MainView(isPaywallPresented: $isPaywallPresented)
+                    case .dashboard:
+                        SpeedTestView(isPaywallPresented: $isPaywallPresented)
+                    case .star:
+                        AIFeatureView(isPaywallPresented: $isPaywallPresented)
+                    case .safeFolder:
+                        safeFolder
+                    case .backup:
+                        BackupView()
+                    }
                 }
-            }
-            .onChange(of: viewModel.currentSelectedTab) { newValue in
-                if newValue != .safeFolder {
-                    isSafeFolderUnlocked = false
+                .onChange(of: viewModel.currentSelectedTab) { newValue in
+                    if newValue != .safeFolder {
+                        isSafeFolderUnlocked = false
+                    }
                 }
-            }
-            .fullScreenCover(isPresented: $isPaywallPresented) {
-                PaywallView(isPresented: $isPaywallPresented)
             }
 
             if isTabBarVisible {
@@ -47,6 +48,17 @@ struct AICleanSpaceView: View {
                     MainTabBar(selectedTab: $viewModel.currentSelectedTab)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+            }
+        }
+        .fullScreenCover(isPresented: $isPaywallPresented) {
+            PaywallView(isPresented: $isPaywallPresented)
+                .onDisappear {
+                    paywallShown = true
+                }
+        }
+        .onAppear {
+            if !paywallShown {
+                isPaywallPresented = true
             }
         }
     }
