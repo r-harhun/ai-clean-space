@@ -80,7 +80,7 @@ struct AIFeatureView: View {
     }
     
     // MARK: - Header
-    
+        
     @ViewBuilder
     private func headerView() -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -100,7 +100,7 @@ struct AIFeatureView: View {
                         Image(systemName: "star.fill")
                             .font(.system(size: 16))
                             .foregroundColor(CMColor.primaryLight)
-                        
+                            
                         Text("Pro")
                             .fontWeight(.semibold)
                             .foregroundColor(CMColor.primaryLight)
@@ -112,13 +112,14 @@ struct AIFeatureView: View {
                 }
             }
             
-            Text("Our AI algorithm analyzes your gallery using the most advanced technologies to find junk.")
+            // **Изменение: Описание Header**
+            Text("Our AI algorithms analyze your gallery using advanced technology to find low-quality media and clutter.")
                 .font(.subheadline)
                 .foregroundColor(CMColor.secondaryText)
         }
         .padding(.top, 12)
     }
-    
+        
     @ViewBuilder
     private func swipeModeSection() -> some View {
         VStack(spacing: 20) {
@@ -127,28 +128,29 @@ struct AIFeatureView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(CMColor.backgroundSecondary)
                         .frame(width: 80, height: 80)
-                    
+                        
                     Image("smartScan")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxWidth: 70, maxHeight: 70)
                 }
-                
+                    
                 VStack(alignment: .leading, spacing: 8) {
                     Text("AI Smart Review")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(CMColor.primaryText)
-                    
-                    Text("AI Mode lets you quickly review and make decisions based on our intelligent scanning recommendations.")
+                        
+                    // **Изменение: Описание секции**
+                    Text("AI Mode lets you quickly review and confirm selections based on our intelligent scanning recommendations.")
                         .font(.subheadline)
                         .foregroundColor(CMColor.secondaryText)
                         .multilineTextAlignment(.leading)
                 }
-                
+                    
                 Spacer()
             }
-            
+                
             Button(action: {
                 if !viewModel.hasActiveSubscription {
                     isPaywallPresented = true
@@ -159,9 +161,9 @@ struct AIFeatureView: View {
                 HStack {
                     Text("Launch AI Review")
                         .fontWeight(.semibold)
-                    
+                        
                     Spacer()
-                    
+                        
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                 }
@@ -171,12 +173,12 @@ struct AIFeatureView: View {
                 .background(CMColor.backgroundSecondary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            
+                
             if viewModel.hasSwipeResults {
                 Button(action: {
                     let impact = UIImpactFeedbackGenerator(style: .medium)
                     impact.impactOccurred()
-                    
+                        
                     let resultsData = viewModel.getSwipeResultsData()
                     presentedResultsView = resultsData
                 }) {
@@ -185,35 +187,35 @@ struct AIFeatureView: View {
                             Circle()
                                 .fill(CMColor.backgroundGradient.opacity(0.2))
                                 .frame(width: 50, height: 50)
-                            
+                                
                             Image(systemName: "chart.bar.fill")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(CMColor.backgroundGradient)
                         }
-                        
+                            
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 6) {
                                 Text("Your AI Report is Ready")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(CMColor.white)
-                                
+                                        
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(CMColor.accent.opacity(0.8))
                             }
-                            
+                                
                             Text("\(viewModel.swipeResultsSummary)")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(CMColor.white.opacity(0.9))
                         }
-                        
+                            
                         Spacer()
-                        
+                            
                         ZStack {
                             Circle()
                                 .fill(CMColor.white.opacity(0.2))
                                 .frame(width: 32, height: 32)
-                            
+                                
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(CMColor.white)
@@ -242,11 +244,11 @@ struct AIFeatureView: View {
             }
         }
     }
-    
+        
     @ViewBuilder
     private func categoriesGrid() -> some View {
         let cardSize = UIScreen.main.bounds.width - 40
-        
+            
         VStack(spacing: 16) {
             Button {
                 if !viewModel.hasActiveSubscription {
@@ -260,7 +262,8 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .similar,
-                    title: "AI-Identified Duplicates",
+                    // **Изменение: Заголовок секции**
+                    title: "AI-Identified Similar Photos",
                     image: viewModel.similarPreview,
                     count: viewModel.similarCount,
                     sizeStr: formatMegabytes(viewModel.similarMegabytes),
@@ -268,7 +271,7 @@ struct AIFeatureView: View {
                 )
             }
             .buttonStyle(.plain)
-            
+                
             Button {
                 if !viewModel.hasActiveSubscription {
                     isPaywallPresented = true
@@ -281,7 +284,8 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .blurred,
-                    title: "AI-Sorted Blurred Images",
+                    // **Изменение: Заголовок секции**
+                    title: "AI-Sorted Low-Quality Images",
                     image: viewModel.blurredPreview,
                     count: viewModel.blurredCount,
                     sizeStr: formatMegabytes(viewModel.blurredMegabytes),
@@ -289,7 +293,7 @@ struct AIFeatureView: View {
                 )
             }
             .buttonStyle(.plain)
-            
+                
             Button {
                 if !viewModel.hasActiveSubscription {
                     isPaywallPresented = true
@@ -302,7 +306,8 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .duplicates,
-                    title: "AI-Detected Duplicate Files",
+                    // **Изменение: Заголовок секции**
+                    title: "AI-Detected Exact Duplicate Files",
                     image: viewModel.duplicatesPreview,
                     count: viewModel.duplicatesCount,
                     sizeStr: formatMegabytes(viewModel.duplicatesMegabytes),
@@ -310,7 +315,7 @@ struct AIFeatureView: View {
                 )
             }
             .buttonStyle(.plain)
-            
+                
             Button {
                 if !viewModel.hasActiveSubscription {
                     isPaywallPresented = true
@@ -323,7 +328,8 @@ struct AIFeatureView: View {
             } label: {
                 getItem(
                     for: .screenshots,
-                    title: "AI-detected Screenshots",
+                    // **Заголовок секции оставлен без изменений**
+                    title: "AI-Detected Screenshots",
                     image: viewModel.screenshotsPreview,
                     count: viewModel.screenshotsCount,
                     sizeStr: formatMegabytes(viewModel.screenshotsMegabytes),

@@ -172,21 +172,30 @@ struct AIFeatureSwipeDetailView: View {
             Spacer()
             
             VStack(spacing: 2) {
-            Text("Swipe Mode")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(CMColor.primaryText)
+                Text("AI Review")
+                // Option 2: AI-Enhanced Cleanup (фокусировка на результате)
+                // Text("AI-Enhanced Cleanup")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(CMColor.primaryText)
                 
-                Text("Long press thumbnail to clear")
+                // Подсказка, связанная с AI-выбором
+                // Option 1: Refine AI Selection
+                Text("Refine AI Selection")
+                // Option 2: Tap to Adjust AI Scan
+                // Text("Tap to Adjust AI Scan")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(CMColor.primaryText.opacity(0.6))
             }
             
             Spacer()
             
+            // Кнопка "Готово"
             Button {
                 processFinishAction()
             } label: {
-                Text("Finish")
+                // Option 1: Complete AI Cleanup
+                // Option 2: Finalize
+                Text("Finalize")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(CMColor.primary)
             }
@@ -267,7 +276,6 @@ struct AIFeatureSwipeDetailView: View {
                     guard !isCardAnimating else { return }
                     dragMovement = value.translation.width
                     
-                    let oldDecision = currentAction
                     if dragMovement > swipeDistanceThreshold {
                         currentAction = .keep
                     } else if dragMovement < -swipeDistanceThreshold {

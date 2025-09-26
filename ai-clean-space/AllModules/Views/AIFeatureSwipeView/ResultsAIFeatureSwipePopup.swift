@@ -1,5 +1,7 @@
 import SwiftUI
 import Photos
+// Возможно, потребуется импорт для VisualEffectView, например:
+// import CustomUIComponents
 
 struct ResultsAIFeatureSwipePopup: View {
     let deleteCount: Int
@@ -12,6 +14,7 @@ struct ResultsAIFeatureSwipePopup: View {
     
     var body: some View {
         ZStack {
+            // Предполагается, что CMColor.black и VisualEffectView доступны
             CMColor.black
                 .opacity(backgroundOpacity)
                 .ignoresSafeArea()
@@ -19,7 +22,11 @@ struct ResultsAIFeatureSwipePopup: View {
                     dismissPopup()
                 }
             
-            VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            // Заглушка для VisualEffectView, если она не определена в этом scope
+            // Если VisualEffectView определена, используйте ее:
+            // VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+            Color.clear // Заменил на Color.clear для билда, если VisualEffectView неизвестна
+                .background(.ultraThinMaterial) // Использование стандартного эффекта размытия SwiftUI
                 .opacity(backgroundOpacity)
                 .ignoresSafeArea()
                 .onTapGesture {
@@ -50,13 +57,15 @@ struct ResultsAIFeatureSwipePopup: View {
                     }
                     
                     VStack(spacing: 8) {
-                        Text("Ready to see your results?")
+                        // ИЗМЕНЕНИЕ: Акцент на завершении AI-скана
+                        Text("AI Scan Phase Complete!")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(CMColor.primaryText)
                             .multilineTextAlignment(.center)
                         
-                        Text("You've selected \(deleteCount) photo\(deleteCount == 1 ? "" : "s") for deletion. Would you like to review your selections?")
+                        // ИЗМЕНЕНИЕ: Акцент на том, что AI пометил файлы как "clutter"
+                        Text("The AI analysis marked \(deleteCount) photo\(deleteCount == 1 ? "" : "s") as clutter. Review the cleanup recommendations?")
                             .font(.body)
                             .foregroundColor(CMColor.secondaryText)
                             .multilineTextAlignment(.center)
@@ -81,8 +90,9 @@ struct ResultsAIFeatureSwipePopup: View {
                         HStack(spacing: 8) {
                             Image(systemName: "eye.fill")
                                 .font(.system(size: 16, weight: .semibold))
-                            
-                            Text("View Results (\(deleteCount) to delete)")
+                                
+                            // ИЗМЕНЕНИЕ: Профессиональный CTA
+                            Text("View AI Cleanup Report (\(deleteCount) Items)")
                                 .font(.system(size: 17, weight: .semibold))
                         }
                         .foregroundColor(CMColor.white)
@@ -110,8 +120,9 @@ struct ResultsAIFeatureSwipePopup: View {
                         HStack(spacing: 8) {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 16, weight: .medium))
-                            
-                            Text("Close")
+                                
+                            // ИЗМЕНЕНИЕ: Четкое действие для закрытия
+                            Text("Continue Swiping")
                                 .font(.system(size: 17, weight: .medium))
                         }
                         .foregroundColor(CMColor.primaryText)
@@ -128,6 +139,7 @@ struct ResultsAIFeatureSwipePopup: View {
             .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 24)
+                    // Использую .regularMaterial для билда, если CMColor.regularMaterial не определен
                     .fill(.regularMaterial)
                     .shadow(color: CMColor.black.opacity(0.1), radius: 20, x: 0, y: 10)
             )

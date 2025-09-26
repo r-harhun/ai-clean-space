@@ -184,6 +184,8 @@ class ContactsPermissionManager: ObservableObject {
             return "Доступ к контактам ограничен"
         case .authorized:
             return "Доступ к контактам разрешен"
+        case .limited:
+            return "Доступ к контактам ограничен"
         @unknown default:
             return "Неизвестный статус доступа к контактам"
         }
